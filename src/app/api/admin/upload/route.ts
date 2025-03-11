@@ -2,8 +2,17 @@ import { NextResponse } from "next/server";
 // إزالة الـ imports غير المستخدمة
 // import { getServerSession } from "next-auth";
 // import { authOptions } from "@/lib/auth";
-import { put } from '@vercel/blob';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 import { v4 as uuidv4 } from "uuid";
+import { existsSync } from 'fs';
+
+// Helper function to ensure directory exists
+async function ensureDir(dirPath: string) {
+    if (!existsSync(dirPath)) {
+        await mkdir(dirPath, { recursive: true });
+    }
+}
 
 export async function POST(request: Request) {
     try {
@@ -50,20 +59,28 @@ export async function POST(request: Request) {
         const fileName = `${uuidv4()}.${fileExtension}`;
 
         try {
-            // Upload to Vercel Blob Storage
-            const blob = await put(fileName, file, {
-                access: 'public',
-            });
+            // Convert file to buffer
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
 
-            console.log('Successfully uploaded to Blob Storage:', blob.url);
+            // Create uploads directory in public folder if it doesn't exist
+            const uploadDir = join(process.cwd(), 'public', 'uploads');
+            await ensureDir(uploadDir);
+
+            // Write file to disk
+            const filePath = join(uploadDir, fileName);
+            await writeFile(filePath, buffer);
+
+            console.log('Successfully saved file to:', filePath);
 
             // Return the URL to the uploaded file
-            return NextResponse.json({ url: blob.url });
+            const fileUrl = `/uploads/${fileName}`;
+            return NextResponse.json({ url: fileUrl });
 
-        } catch (blobError) {
-            console.error("Error uploading to Blob Storage:", blobError);
+        } catch (saveError) {
+            console.error("Error saving file:", saveError);
             return NextResponse.json(
-                { error: "Error uploading to Blob Storage", details: blobError instanceof Error ? blobError.message : 'Unknown error' },
+                { error: "Error saving file", details: saveError instanceof Error ? saveError.message : 'Unknown error' },
                 { status: 500 }
             );
         }

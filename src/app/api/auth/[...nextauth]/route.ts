@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
-import db from "@/lib/db";
+import { mockUsers } from "@/lib/mockData";
 import { NextRequest, NextResponse } from "next/server";
 // import type { NextAuthOptions } from "next-auth";
 import type { AuthOptions } from "next-auth";
@@ -37,10 +37,8 @@ const providers: AuthOptions["providers"] = [
             }
 
             try {
-                // Find the user by email
-                const user = await db.user.findUnique({
-                    where: { email: credentials.email }
-                });
+                // Find the user by email in mock data
+                const user = mockUsers.find(user => user.email === credentials.email);
 
                 console.log("User lookup for:", credentials.email);
 
@@ -101,7 +99,7 @@ const handler = NextAuth({
         maxAge: 30 * 24 * 60 * 60, // 30 days
         updateAge: 5 * 60, // 5 minutes - update more frequently
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || "your-super-secret-key-for-next-auth", // Fallback for development
     pages: {
         signIn: "/auth/login",
         signOut: "/auth/logout",
@@ -137,7 +135,7 @@ const handler = NextAuth({
         },
         async redirect({ url, baseUrl }) {
             console.log('NextAuth redirect callback:', { url, baseUrl });
-            
+
             // Check for callback loops involving login page
             if (url.includes('/auth/login') && url.includes('callbackUrl')) {
                 console.log('NextAuth: Detected potential callback loop, redirecting to home');
@@ -147,14 +145,14 @@ const handler = NextAuth({
             // For sign-out, always redirect to the current origin
             if (url.includes('/signout') || url.includes('/api/auth/signout') || url.includes('/logout')) {
                 console.log('NextAuth: Sign-out detected, redirecting to origin');
-                
+
                 // For sign-out, we'll always redirect to the base URL to avoid port issues
                 return baseUrl;
             }
 
             // Allows relative callback URLs
             if (url.startsWith("/")) return `${baseUrl}${url}`;
-            
+
             // For all other cases, return to base URL
             return baseUrl;
         },
@@ -168,26 +166,26 @@ async function authHandler(req: NextRequest, ctx: { params: { nextauth: string[]
         // Get the origin from the request to use in redirects
         const origin = req.headers.get('origin') || req.headers.get('host') || '';
         console.log('Auth request origin/host:', origin);
-        
+
         // Add special handling for sign-out paths
         const { pathname } = new URL(req.url);
         if (pathname.includes('/signout') || pathname.includes('/logout')) {
             console.log('NextAuth: Custom sign-out handling, detected origin:', origin);
-            
+
             // Ensure we return proper JSON for sign-out
             if (req.method === 'POST') {
                 const response = await handler(req, ctx);
-                
+
                 // Make sure we're returning valid JSON
                 if (!response.headers.get('content-type')?.includes('application/json')) {
                     // Get the base URL from environment or fallback to request origin
-                    const baseUrl = process.env.NEXTAUTH_URL || 
-                                   (typeof window !== 'undefined' ? window.location.origin : '') || 
-                                   new URL(req.url).origin || 
-                                   '/';
-                    
+                    const baseUrl = process.env.NEXTAUTH_URL ||
+                        (typeof window !== 'undefined' ? window.location.origin : '') ||
+                        new URL(req.url).origin ||
+                        '/';
+
                     // Return a proper JSON response with the correct URL
-                    return NextResponse.json({ 
+                    return NextResponse.json({
                         success: true,
                         url: baseUrl
                     });
@@ -195,7 +193,7 @@ async function authHandler(req: NextRequest, ctx: { params: { nextauth: string[]
                 return response;
             }
         }
-        
+
         return handler(req, ctx);
     } catch (error) {
         console.error('NextAuth API Error:', error);

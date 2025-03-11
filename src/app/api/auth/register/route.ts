@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import db from "@/lib/db";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { v4 as uuidv4 } from "uuid";
+import { mockUsers } from "@/lib/mockData";
 
 export async function POST(request: NextRequest) {
     try {
@@ -37,10 +37,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if user already exists
-        const existingUser = await db.user.findUnique({
-            where: { email }
-        });
+        // Check if user already exists in mock data
+        const existingUser = mockUsers.find(user => user.email === email);
 
         if (existingUser) {
             console.log("User already exists:", email);
@@ -54,28 +52,30 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
-            // Simplified approach: Create the user with the cart in a single operation
-            const user = await db.user.create({
-                data: {
-                    name,
-                    email,
-                    password: hashedPassword,
-                    cart: {
-                        create: {} // Create an empty cart for the user
-                    }
-                },
-                // Include the cart in the response to verify it was created
-                include: {
-                    cart: true
-                }
-            });
+            // Create new user with mock data
+            const userId = uuidv4();
+            const cartId = `cart-${userId}`;
 
-            console.log("User created successfully with ID:", user.id);
-            console.log("Cart created with ID:", user.cart?.id);
+            const newUser = {
+                id: userId,
+                name,
+                email,
+                password: hashedPassword,
+                role: "USER",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                cart: { id: cartId, items: [] }
+            };
+
+            // Add to mock users
+            mockUsers.push(newUser);
+
+            console.log("User created successfully with ID:", newUser.id);
+            console.log("Cart created with ID:", newUser.cart?.id);
 
             // Don't send password back to client
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password: _password, ...userWithoutPassword } = user;
+            const { password: _password, ...userWithoutPassword } = newUser;
 
             return NextResponse.json(
                 {
@@ -84,23 +84,12 @@ export async function POST(request: NextRequest) {
                 },
                 { status: 201 }
             );
-        } catch (dbError) {
-            console.error("Database error during user creation:", dbError);
-
-            // Better error handling for Prisma errors
-            if (dbError instanceof PrismaClientKnownRequestError) {
-                if (dbError.code === 'P2002') {
-                    return NextResponse.json(
-                        { error: "A user with this email already exists" },
-                        { status: 409 }
-                    );
-                }
-            }
-
+        } catch (error) {
+            console.error("Error during user creation:", error);
             return NextResponse.json(
                 {
-                    error: "Database error during registration",
-                    details: dbError instanceof Error ? dbError.message : String(dbError)
+                    error: "Error during registration",
+                    details: error instanceof Error ? error.message : String(error)
                 },
                 { status: 500 }
             );

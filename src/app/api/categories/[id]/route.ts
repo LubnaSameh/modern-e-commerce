@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { mockCategories, mockProducts } from '@/lib/mockData';
 
 export async function GET(
     request: NextRequest,
@@ -8,18 +8,8 @@ export async function GET(
     try {
         const categoryId = params.id;
 
-        // التحقق من وجود التصنيف
-        const category = await db.category.findUnique({
-            where: { id: categoryId },
-            include: {
-                products: {
-                    include: {
-                        discount: true,
-                        productImages: true,
-                    },
-                },
-            },
-        });
+        // البحث عن الفئة المطلوبة
+        const category = mockCategories.find(cat => cat.id === categoryId);
 
         if (!category) {
             return NextResponse.json(
@@ -28,7 +18,16 @@ export async function GET(
             );
         }
 
-        return NextResponse.json(category, { status: 200 });
+        // الحصول على منتجات هذه الفئة
+        const categoryProducts = mockProducts.filter(product => product.categoryId === categoryId);
+
+        // إضافة المنتجات إلى الفئة
+        const categoryWithProducts = {
+            ...category,
+            products: categoryProducts
+        };
+
+        return NextResponse.json(categoryWithProducts, { status: 200 });
     } catch (error) {
         console.error('Error fetching category details:', error);
         return NextResponse.json(

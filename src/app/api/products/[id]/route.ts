@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { mockProducts } from "@/lib/mockData";
 
 // GET - Fetch a single product by ID
 export async function GET(
@@ -8,15 +8,8 @@ export async function GET(
 ) {
     try {
         console.log(`API Request - GET /api/products/${params.id}`);
-        
-        const product = await prisma.product.findUnique({
-            where: { id: params.id },
-            include: {
-                category: true,
-                productImages: true,
-                discount: true,
-            },
-        });
+
+        const product = mockProducts.find(p => p.id === params.id);
 
         if (!product) {
             console.log(`Product not found with ID: ${params.id}`);
@@ -28,7 +21,7 @@ export async function GET(
 
         console.log(`Found product: ${product.name}, Category: ${product.category?.name || 'None'}`);
         console.log(`Product images: ${product.productImages?.length || 0}, Main image: ${product.mainImage ? 'Yes' : 'No'}`);
-        
+
         return NextResponse.json(product);
     } catch (error) {
         console.error("Error fetching product:", error);
