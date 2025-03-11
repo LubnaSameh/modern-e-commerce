@@ -1,52 +1,77 @@
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
-import { mockProducts, mockCategories } from "@/lib/mockData";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
-// GET - Get all products (for admin)
+// GET - Fetch products with pagination, search, and filtering
 export async function GET(request: Request) {
     try {
+        // Temporarily disable authentication check for development
+        /*
+        const session = await getServerSession(authOptions);
+
+        if (!session || !session.user || session.user.role !== "ADMIN") {
+            return NextResponse.json(
+                { error: "Unauthorized access" },
+                { status: 403 }
+            );
+        }
+        */
+
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "10");
         const search = searchParams.get("q") || "";
         const categoryId = searchParams.get("categoryId") || "";
 
-        // Filter the products
-        let filteredProducts = [...mockProducts];
+        const skip = (page - 1) * limit;
+
+        // Build the where clause for filtering
+        const where: Prisma.ProductWhereInput = {};
 
         if (search) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.name.toLowerCase().includes(search.toLowerCase()) ||
-                product.description.toLowerCase().includes(search.toLowerCase())
-            );
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
         }
 
         if (categoryId) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.categoryId === categoryId
-            );
+            where.categoryId = categoryId;
         }
 
-        // Get total for pagination
-        const total = filteredProducts.length;
+        // Get total count for pagination
+        const total = await prisma.product.count({ where });
 
-        // Apply pagination
-        const skip = (page - 1) * limit;
-        const paginatedProducts = filteredProducts.slice(skip, skip + limit);
+        // Get products
+        const products = await prisma.product.findMany({
+            where,
+            include: {
+                category: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            skip,
+            take: limit,
+        });
 
-        console.log(`Admin Products API - Found ${paginatedProducts.length} products`);
+        // Ensure each product has a category property, even if it's null
+        const safeProducts = products.map(product => ({
+            ...product,
+            category: product.category || null,
+        }));
 
         return NextResponse.json({
-            products: paginatedProducts,
+            products: safeProducts,
             total,
             page,
             limit,
             totalPages: Math.ceil(total / limit),
         });
     } catch (error) {
-        console.error("Error fetching admin products:", error);
+        console.error("Error fetching products:", error);
         return NextResponse.json(
-            { error: "Error fetching products", details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: "Error fetching products" },
             { status: 500 }
         );
     }
@@ -55,69 +80,83 @@ export async function GET(request: Request) {
 // POST - Create a new product
 export async function POST(request: Request) {
     try {
+        // Temporarily disable authentication check for development
+        /*
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user || session.user.role !== "ADMIN") {
+            return NextResponse.json(
+                { error: "Unauthorized access" },
+                { status: 403 }
+            );
+        }
+        */
+
         const body = await request.json();
 
         // Validate required fields
-        if (!body.name || !body.price || !body.categoryId) {
+        if (!body.name || !body.price) {
             return NextResponse.json(
-                { error: "Name, price, and category are required" },
+                { error: "Name and price are required fields" },
                 { status: 400 }
             );
         }
 
-        // Check if category exists
-        const categoryExists = mockCategories.some(cat => cat.id === body.categoryId);
-        if (!categoryExists) {
-            return NextResponse.json(
-                { error: "Category not found" },
-                { status: 400 }
-            );
+        const {
+            name,
+            description,
+            price,
+            stock = 0,
+            categoryId,
+            mainImage,
+            additionalImages,
+            hasDiscount,
+            discountPercent,
+            discountStartDate,
+            discountEndDate,
+        } = body;
+
+        // Create the product
+        const product = await prisma.product.create({
+            data: {
+                name,
+                description: description || "",
+                price: typeof price === 'string' ? parseFloat(price) : price,
+                stock: typeof stock === 'string' ? parseInt(stock) : stock,
+                categoryId: categoryId || null,
+                mainImage: mainImage || "",
+            },
+        });
+
+        // Add additional images if provided
+        if (additionalImages && additionalImages.length > 0) {
+            await prisma.productImage.createMany({
+                data: additionalImages.map((url: string) => ({
+                    url,
+                    productId: product.id,
+                })),
+            });
         }
 
-        // Create new product ID
-        const newId = uuidv4();
+        // Add discount if enabled
+        if (hasDiscount && discountPercent) {
+            await prisma.discount.create({
+                data: {
+                    productId: product.id,
+                    name: `${discountPercent}% off`,
+                    discountPercent,
+                    active: true,
+                    startDate: discountStartDate ? new Date(discountStartDate) : null,
+                    endDate: discountEndDate ? new Date(discountEndDate) : null,
+                },
+            });
+        }
 
-        // Get the category for the product
-        const category = mockCategories.find(cat => cat.id === body.categoryId);
-
-        // Create the new product
-        const newProduct = {
-            id: newId,
-            name: body.name,
-            description: body.description || "",
-            price: parseFloat(body.price),
-            stock: parseInt(body.stock || "0"),
-            mainImage: body.mainImage || "/products/placeholder.jpg",
-            image: body.mainImage || "/products/placeholder.jpg",
-            images: body.images || [body.mainImage || "/products/placeholder.jpg"],
-            categoryId: body.categoryId,
-            category: category,
-            productImages: body.images
-                ? body.images.map((img: string, i: number) => ({
-                    id: `${newId}-img-${i}`,
-                    url: img,
-                    productId: newId
-                }))
-                : [{
-                    id: `${newId}-img-0`,
-                    url: body.mainImage || "/products/placeholder.jpg",
-                    productId: newId
-                }],
-            discount: null,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-
-        // Add to our mock products
-        mockProducts.push(newProduct);
-
-        console.log(`Created new product: ${newProduct.name} (ID: ${newProduct.id})`);
-
-        return NextResponse.json(newProduct, { status: 201 });
+        console.log("Product created successfully:", product);
+        return NextResponse.json({ success: true, product });
     } catch (error) {
         console.error("Error creating product:", error);
         return NextResponse.json(
-            { error: "Error creating product", details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: "Error creating product", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }

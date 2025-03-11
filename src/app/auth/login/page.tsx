@@ -185,7 +185,7 @@ export default function LoginPage() {
                                     </label>
                                     <input
                                         type="email"
-                                        placeholder="admin@example.com"
+                                        placeholder="your@email.com"
                                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg 
                                                  bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
                                                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -193,9 +193,6 @@ export default function LoginPage() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                     />
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Try: admin@example.com (Admin) or user@example.com (User)
-                                    </p>
                                 </div>
 
                                 <div className="space-y-2">
@@ -203,8 +200,11 @@ export default function LoginPage() {
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Password
                                         </label>
-                                        <Link href="/auth/forgot-password" className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                                            Forgot Password?
+                                        <Link
+                                            href="/auth/forgot-password"
+                                            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                        >
+                                            Forgot password?
                                         </Link>
                                     </div>
                                     <input
@@ -217,9 +217,6 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                     />
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Password: password123
-                                    </p>
                                 </div>
 
                                 <button

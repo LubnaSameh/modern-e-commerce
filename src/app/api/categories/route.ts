@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
-import { mockCategories } from "@/lib/mockData";
+import db from '@/lib/db';
 
 export async function GET() {
     try {
-        console.log("API Request - GET /api/categories");
+        const categories = await db.category.findMany({
+            include: {
+                _count: {
+                    select: { products: true }
+                }
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
 
-        // Return the mock categories
-        return NextResponse.json(mockCategories);
+        return NextResponse.json(categories, { status: 200 });
     } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error('Error fetching categories:', error);
         return NextResponse.json(
-            { error: "Error fetching categories", details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: 'Error fetching categories' },
             { status: 500 }
         );
     }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { mockUsers } from '@/lib/mockData';
+import db from '@/lib/db';
 
 export async function GET(request: Request) {
     try {
@@ -13,8 +13,11 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Check if a user with this email exists in our mock data
-        const user = mockUsers.find(user => user.email === email);
+        // Check if a user with this email exists
+        const user = await db.user.findUnique({
+            where: { email },
+            select: { id: true } // Only select the ID field to minimize data exposure
+        });
 
         // Return whether the user exists or not
         return NextResponse.json({

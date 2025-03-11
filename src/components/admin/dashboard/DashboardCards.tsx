@@ -63,9 +63,10 @@ const fixedStats = {
     totalRevenue: 15890.75,
     totalOrders: 84,
     totalUsers: 532,
+    // Products will be fetched from the database
 };
 
-function DashboardCards() {
+export function DashboardCards() {
     const [realProducts, setRealProducts] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -73,18 +74,40 @@ function DashboardCards() {
         const fetchRealProducts = async () => {
             try {
                 setIsLoading(true);
-                // Use hardcoded value to avoid API call that might fail
-                setRealProducts(152);
+
+                console.log('Fetching real product count...');
+                const response = await fetch('/api/admin/stats', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch product stats: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Only use the totalProducts from real data
+                if (data && typeof data.totalProducts === 'number') {
+                    setRealProducts(data.totalProducts);
+                    console.log('Using real product count:', data.totalProducts);
+                } else {
+                    // Fallback to fixed products data
+                    setRealProducts(152); // Fixed product count
+                    console.log('Using fixed product count');
+                }
             } catch (err) {
-                console.error('Error with product stats:', err);
-                setRealProducts(152);
+                console.error('Error fetching product stats:', err);
+                // Fallback to fixed data
+                setRealProducts(152); // Fixed product count
             } finally {
                 setIsLoading(false);
             }
         };
 
-        // Simulate API fetch with a small delay
-        setTimeout(fetchRealProducts, 500);
+        fetchRealProducts();
     }, []);
 
     // Create stats card data with a mix of fixed and real data
@@ -129,14 +152,9 @@ function DashboardCards() {
                     icon={stat.icon}
                     change={stat.change}
                     description={stat.description}
-                    isLoading={index === 1 && isLoading}
+                    isLoading={index === 1 && isLoading} // Only show loading for Products
                 />
             ))}
         </div>
     );
-}
-
-// Export as default for dynamic import
-export default DashboardCards;
-// Also keep named export for backwards compatibility
-export { DashboardCards }; 
+} 

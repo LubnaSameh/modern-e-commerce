@@ -2,32 +2,8 @@ import { NextResponse } from "next/server";
 // إزالة الـ imports غير المستخدمة
 // import { getServerSession } from "next-auth";
 // import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from "uuid";
-import { existsSync } from 'fs';
-
-// Helper function to ensure directory exists
-async function ensureDir(dirPath: string) {
-    if (!existsSync(dirPath)) {
-        await mkdir(dirPath, { recursive: true });
-    }
-}
-
-// مخزن مؤقت للصور المرفوعة في الذاكرة
-const uploadedImages = new Map<string, string>();
-
-// قائمة ثابتة من صور Unsplash للاستخدام في الرفع الوهمي
-const unsplashImages = [
-    "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=500",
-    "https://images.unsplash.com/photo-1560343090-f0409e92791a?q=80&w=500",
-    "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?q=80&w=500",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=500",
-    "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=500",
-    "https://images.unsplash.com/photo-1585155770447-2f66e2a397b5?q=80&w=500",
-    "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?q=80&w=500",
-    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=500"
-];
 
 export async function POST(request: Request) {
     try {
@@ -53,7 +29,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // التحقق من حجم الملف (بحد أقصى 5 ميجابايت)
+        // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             return NextResponse.json(
                 { error: "حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت" },
@@ -61,7 +37,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // التحقق من نوع الملف
+        // Check file type
         if (!file.type.startsWith("image/")) {
             return NextResponse.json(
                 { error: "يرجى تحميل ملف صورة صالح" },
@@ -69,19 +45,25 @@ export async function POST(request: Request) {
             );
         }
 
+        // Create unique filename
+        const fileExtension = file.name.split(".").pop();
+        const fileName = `${uuidv4()}.${fileExtension}`;
+
         try {
-            // اختيار صورة عشوائية من قائمة Unsplash
-            const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
+            // Upload to Vercel Blob Storage
+            const blob = await put(fileName, file, {
+                access: 'public',
+            });
 
-            console.log(`Using random image from Unsplash: ${randomImage}`);
+            console.log('Successfully uploaded to Blob Storage:', blob.url);
 
-            // إرجاع عنوان URL للصورة
-            return NextResponse.json({ url: randomImage });
+            // Return the URL to the uploaded file
+            return NextResponse.json({ url: blob.url });
 
-        } catch (error) {
-            console.error("Error processing upload:", error);
+        } catch (blobError) {
+            console.error("Error uploading to Blob Storage:", blobError);
             return NextResponse.json(
-                { error: "Error processing upload", details: error instanceof Error ? error.message : 'Unknown error' },
+                { error: "Error uploading to Blob Storage", details: blobError instanceof Error ? blobError.message : 'Unknown error' },
                 { status: 500 }
             );
         }
@@ -92,9 +74,4 @@ export async function POST(request: Request) {
             { status: 500 }
         );
     }
-}
-
-// للاستخدام في API أخرى
-export function getUploadedImageUrl(fileName: string): string | undefined {
-    return uploadedImages.get(fileName);
 } 

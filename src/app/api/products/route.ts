@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { mockProducts } from "@/lib/mockData";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 // GET - Fetch products with pagination, search, and filtering
 export async function GET(request: Request) {
@@ -18,51 +19,84 @@ export async function GET(request: Request) {
             page, limit, search, categoryId, categoryName, minPrice, maxPrice
         });
 
-        // Filter the mock products based on search criteria
-        let filteredProducts = [...mockProducts];
+        const skip = (page - 1) * limit;
+
+        // Build the where clause for filtering
+        const where: Prisma.ProductWhereInput = {};
 
         if (search) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.name.toLowerCase().includes(search.toLowerCase()) ||
-                product.description.toLowerCase().includes(search.toLowerCase())
-            );
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
         }
 
         if (categoryId) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.categoryId === categoryId
-            );
+            where.categoryId = categoryId;
         }
 
+        // Filter by category name if provided
         if (categoryName) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.category.name.toLowerCase() === categoryName.toLowerCase()
-            );
+            where.category = {
+                name: {
+                    equals: categoryName
+                }
+            };
         }
 
-        if (minPrice !== undefined) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.price >= minPrice
-            );
+        // Filter by price range if provided
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            where.price = {};
+
+            if (minPrice !== undefined) {
+                where.price.gte = minPrice;
+            }
+
+            if (maxPrice !== undefined) {
+                where.price.lte = maxPrice;
+            }
         }
 
-        if (maxPrice !== undefined) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.price <= maxPrice
-            );
+        // Log the constructed where clause for debugging
+        console.log("Products API - Where clause:", JSON.stringify(where));
+
+        // Get total count for pagination
+        const total = await prisma.product.count({ where });
+        console.log(`Products API - Total count: ${total}`);
+
+        // Get products
+        const products = await prisma.product.findMany({
+            where,
+            include: {
+                category: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            skip,
+            take: limit,
+        });
+
+        console.log(`Products API - Found ${products.length} products`);
+
+        // Log first product for debugging (if exists)
+        if (products.length > 0) {
+            console.log("Products API - First product sample:", {
+                id: products[0].id,
+                name: products[0].name,
+                category: products[0].category?.name || null,
+                createdAt: products[0].createdAt // Log creation date for debugging
+            });
         }
 
-        // Get total for pagination
-        const total = filteredProducts.length;
-
-        // Apply pagination
-        const skip = (page - 1) * limit;
-        const paginatedProducts = filteredProducts.slice(skip, skip + limit);
-
-        console.log(`Products API - Found ${paginatedProducts.length} products`);
+        // Ensure each product has a category property, even if it's null
+        const safeProducts = products.map(product => ({
+            ...product,
+            category: product.category || null,
+        }));
 
         return NextResponse.json({
-            products: paginatedProducts,
+            products: safeProducts,
             total,
             page,
             limit,

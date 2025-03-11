@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
-import { mockUsers } from "@/lib/mockData";
+import db from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 // import type { NextAuthOptions } from "next-auth";
 import type { AuthOptions } from "next-auth";
@@ -37,8 +37,10 @@ const providers: AuthOptions["providers"] = [
             }
 
             try {
-                // Find the user by email in mock data
-                const user = mockUsers.find(user => user.email === credentials.email);
+                // Find the user by email
+                const user = await db.user.findUnique({
+                    where: { email: credentials.email }
+                });
 
                 console.log("User lookup for:", credentials.email);
 
@@ -99,7 +101,7 @@ const handler = NextAuth({
         maxAge: 30 * 24 * 60 * 60, // 30 days
         updateAge: 5 * 60, // 5 minutes - update more frequently
     },
-    secret: process.env.NEXTAUTH_SECRET || "your-super-secret-key-for-next-auth", // Fallback for development
+    secret: process.env.NEXTAUTH_SECRET,
     pages: {
         signIn: "/auth/login",
         signOut: "/auth/logout",

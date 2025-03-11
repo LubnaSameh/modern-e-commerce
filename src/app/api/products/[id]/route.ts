@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mockProducts } from "@/lib/mockData";
+import { prisma } from "@/lib/prisma";
 
 // GET - Fetch a single product by ID
 export async function GET(
@@ -9,7 +9,14 @@ export async function GET(
     try {
         console.log(`API Request - GET /api/products/${params.id}`);
 
-        const product = mockProducts.find(p => p.id === params.id);
+        const product = await prisma.product.findUnique({
+            where: { id: params.id },
+            include: {
+                category: true,
+                productImages: true,
+                discount: true,
+            },
+        });
 
         if (!product) {
             console.log(`Product not found with ID: ${params.id}`);
