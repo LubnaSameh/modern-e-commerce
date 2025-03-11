@@ -1,0 +1,205 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id              String    @id @default(uuid())
+  name            String
+  email           String    @unique
+  password        String
+  image           String?
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  orders          Order[]
+  cart            Cart?
+  address         Address[]
+}
+
+// Role Enum
+enum Role {
+  USER
+  ADMIN
+}
+
+// Product Model
+model Product {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  price           Float     // Changed from Decimal
+  mainImage       String    // Single main image
+  stock           Int       @default(0)
+  categoryId      String
+  category        Category  @relation(fields: [categoryId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+  discount        Discount?
+  productImages   ProductImage[] // Relation to additional images
+}
+
+// Category Model
+model Category {
+  id              String    @id @default(uuid())
+  name            String    @unique
+  description     String?
+  image           String?
+  products        Product[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Order Model
+model Order {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  status          OrderStatus @default(PENDING)
+  total           Float     // Changed from Decimal
+  shippingAddress String
+  paymentMethod   PaymentMethod
+  items           OrderItem[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Order Status Enum
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+// Payment Method Enum
+enum PaymentMethod {
+  STRIPE
+  COD
+  MANUAL
+}
+
+// Order Item Model
+model OrderItem {
+  id              String    @id @default(uuid())
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  quantity        Int
+  price           Float     // Changed from Decimal
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Cart Model
+model Cart {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  items           CartItem[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Cart Item Model
+model CartItem {
+  id              String    @id @default(uuid())
+  cartId          String
+  cart            Cart      @relation(fields: [cartId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  quantity        Int
+}
+
+// Address Model
+model Address {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  street          String
+  city            String
+  state           String
+  country         String
+  zipCode         String
+  isDefault       Boolean   @default(false)
+}
+
+// Discount Model
+model Discount {
+  id              String    @id @default(uuid())
+  productId       String    @unique
+  product         Product   @relation(fields: [productId], references: [id])
+  name            String
+  description     String?
+  discountPercent Float
+  active          Boolean   @default(true)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Banner Model
+model Banner {
+  id              String    @id @default(uuid())
+  title           String
+  description     String
+  image           String
+  link            String
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Settings Model
+model Settings {
+  id              String    @id @default(uuid())
+  storeName       String
+  storeEmail      String
+  storeLogo       String?
+  storePhone      String?
+  storeAddress    String?
+  currencySymbol  String    @default("$")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ProductImage Model for storing multiple images
+model ProductImage {
+  id          String    @id @default(uuid())
+  url         String
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+// Coupon Model
+model Coupon {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  amount          Float     // Changed from Decimal
+  type            String    // percentage or fixed
+  minPurchase     Float?    // Changed from Decimal
+  maxUses         Int?
+  usesCount       Int       @default(0)
+  active          Boolean   @default(true)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
