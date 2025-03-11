@@ -36,7 +36,6 @@ function ProductCard({
 }: ProductCardProps) {
     const [isHovered, setIsHovered] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
-    const [mounted, setMounted] = useState(false);
     
     // Use a fallback image URL if image is empty or undefined
     const imageUrl = image && image.trim() !== "" 
@@ -56,9 +55,6 @@ function ProductCard({
     
     // Check if product is in wishlist on component mount
     useEffect(() => {
-        // Set mounted to true to indicate client-side rendering
-        setMounted(true);
-        
         // Ensure we're on the client side
         if (typeof window !== 'undefined') {
             try {
@@ -184,13 +180,16 @@ function ProductCard({
             {/* Image Container */}
             <div className="relative w-full pt-[100%] bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 {isLocalUrl(imageUrl) ? (
-                    // Use regular img tag for local URLs
-                    <img
+                    // Use Next.js Image component for better performance
+                    <Image
                         src={imageUrl}
                         alt={name}
-                        className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className={`object-cover transition-all duration-500 ${
                             isHovered ? "scale-110" : "scale-100"
                         } dark:brightness-90`}
+                        loading="lazy"
                     />
                 ) : (
                     // Use next/image for external URLs

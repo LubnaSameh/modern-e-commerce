@@ -51,12 +51,17 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                             }`}
                     >
                         {isLocalUrl(image) ? (
-                            // If it's a local URL (localhost), use a regular img tag to avoid next/image domain issues
-                            <img
-                                src={image}
-                                alt={`${productName} - Image ${index + 1}`}
-                                className="w-full h-full object-cover"
-                            />
+                            // استخدام Image من Next.js للحصول على أداء أفضل
+                            <div className="relative w-full h-full">
+                                <Image
+                                    src={image}
+                                    alt={`${productName} - Image ${index + 1}`}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    className="object-cover"
+                                    loading="lazy"
+                                />
+                            </div>
                         ) : (
                             // If it's an external URL, use next/image
                             <Image
@@ -112,11 +117,16 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                                 }`}
                         >
                             {isLocalUrl(image) ? (
-                                <img
-                                    src={image}
-                                    alt={`${productName} thumbnail ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                />
+                                <div className="relative w-full h-full">
+                                    <Image
+                                        src={image}
+                                        alt={`Thumbnail ${index + 1}`}
+                                        fill
+                                        sizes="80px"
+                                        className="object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
                             ) : (
                                 <Image
                                     src={image}

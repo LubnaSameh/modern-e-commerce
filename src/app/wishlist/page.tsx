@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { toast } from 'react-toastify';
+import Image from "next/image";
 
 export default function WishlistPage() {
   const [mounted, setMounted] = useState(false);
@@ -145,11 +146,16 @@ export default function WishlistPage() {
                 >
                   <div className="relative pb-[56.25%] overflow-hidden">
                     {item.image ? (
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="absolute top-0 left-0 w-full h-full object-cover transition-transform hover:scale-105"
-                      />
+                      <div className="relative w-full h-full absolute top-0 left-0">
+                        <Image 
+                          src={item.image} 
+                          alt={item.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                          className="object-cover transition-transform hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
                     ) : (
                       <div className="absolute top-0 left-0 w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                         <span className="text-gray-500 dark:text-gray-400">No image</span>

@@ -18,8 +18,8 @@ export default function AboutPage() {
                             Our Story
                         </h1>
                         <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-                            At ModernShop, we're passionate about bringing you the best products with an unmatched shopping experience.
-                            Founded in 2023, we've quickly grown to become a trusted destination for quality and innovation.
+                            At ModernShop, we&apos;re passionate about bringing you the best products with an unmatched shopping experience.
+                            Founded in 2023, we&apos;ve quickly grown to become a trusted destination for quality and innovation.
                         </p>
                     </div>
                 </div>
@@ -45,7 +45,7 @@ export default function AboutPage() {
                         <div>
                             <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Our Mission</h2>
                             <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-                                We believe shopping should be more than just a transaction. Our mission is to connect people with products they'll love while providing exceptional service every step of the way.
+                                We believe shopping should be more than just a transaction. Our mission is to connect people with products they&apos;ll love while providing exceptional service every step of the way.
                             </p>
                             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Our Values</h3>
                             <ul className="space-y-4">
@@ -151,7 +151,7 @@ export default function AboutPage() {
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Jessica Patel</h3>
                                 <p className="text-blue-600 dark:text-blue-400 mb-3">Head of Design</p>
                                 <p className="text-gray-600 dark:text-gray-400">
-                                    Jessica's creative eye ensures our product selection and website are beautiful and intuitive.
+                                    Jessica&apos;s creative eye ensures our product selection and website are beautiful and intuitive.
                                 </p>
                             </div>
                         </div>
@@ -165,7 +165,7 @@ export default function AboutPage() {
                     <div className="max-w-3xl mx-auto text-center mb-12">
                         <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Why Choose ModernShop</h2>
                         <p className="text-lg text-gray-700 dark:text-gray-300">
-                            We're more than just another online store. Here's what sets us apart:
+                            We&apos;re more than just another online store. Here&apos;s what sets us apart:
                         </p>
                     </div>
 
