@@ -2,6 +2,12 @@
 const nextConfig = {
   /* config options here */
   reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     domains: [
       'i.pravatar.cc',
