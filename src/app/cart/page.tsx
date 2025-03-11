@@ -13,10 +13,20 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 
+// Define interface for cart items
+interface CartItem {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    category?: string;
+}
+
 export default function CartPage() {
     // Client-side only state to avoid hydration issues
     const [mounted, setMounted] = useState(false);
-    const [cartItems, setCartItems] = useState<any[]>([]);
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [totalItems, setTotalItems] = useState(0);
     const [subtotal, setSubtotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -129,7 +139,7 @@ export default function CartPage() {
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Your Cart is Empty</h1>
                         <p className="text-gray-600 dark:text-gray-400 mb-8">
-                            Looks like you haven't added any products to your cart yet.
+                            Looks like you haven&apos;t added any products to your cart yet.
                         </p>
                         <Link
                             href="/shop"

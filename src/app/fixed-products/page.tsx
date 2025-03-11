@@ -5,15 +5,14 @@ import Link from 'next/link';
 import { fixedProducts } from '@/lib/fixedData';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function FixedProductsPage() {
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Load fixed products
-    setProducts(fixedProducts);
+    // Set loading to false after a brief delay to simulate data loading
     setLoading(false);
   }, []);
 
@@ -43,7 +42,7 @@ export default function FixedProductsPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb and Back Button */}
       <div className="flex items-center mb-6">
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
         >
@@ -65,11 +64,13 @@ export default function FixedProductsPage() {
         {fixedProducts.map((product) => (
           <Link href={`/fixed-products/${product.id}`} key={product.id}>
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
-                <img
+              <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
+                <Image
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  className="object-cover hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div className="p-4">

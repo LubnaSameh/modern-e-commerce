@@ -12,8 +12,6 @@ import {
     Image as ImageIcon,
     Home,
     ChevronDown,
-    DollarSign,
-    Menu,
     X,
     Sun,
     Moon,

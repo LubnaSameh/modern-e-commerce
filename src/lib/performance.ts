@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { throttle, debounce } from './utils';
+import { throttle } from './utils';
 
 /**
  * Hook to detect if the user is on a slow connection
@@ -10,30 +10,38 @@ export function useSlowConnection() {
   useEffect(() => {
     // Check if the browser supports the Network Information API
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection;
-      
+      // Define a specific type for the navigator.connection
+      interface NetworkInformation {
+        effectiveType: string;
+        saveData: boolean;
+        addEventListener: (event: string, listener: () => void) => void;
+        removeEventListener: (event: string, listener: () => void) => void;
+      }
+
+      const connection = (navigator as unknown as { connection: NetworkInformation }).connection;
+
       // Check if the connection is slow (2G or slower)
       const checkConnection = () => {
-        const isEffectiveSlow = connection.effectiveType === '2g' || 
-                               connection.effectiveType === 'slow-2g';
+        const isEffectiveSlow = connection.effectiveType === '2g' ||
+          connection.effectiveType === 'slow-2g';
         const isSaveData = connection.saveData === true;
-        
+
         setIsSlowConnection(isEffectiveSlow || isSaveData);
       };
-      
+
       // Check connection initially
       checkConnection();
-      
+
       // Listen for changes in connection
       connection.addEventListener('change', checkConnection);
-      
+
       // Clean up
       return () => {
         connection.removeEventListener('change', checkConnection);
       };
     }
   }, []);
-  
+
   return isSlowConnection;
 }
 
@@ -42,19 +50,19 @@ export function useSlowConnection() {
  */
 export function usePageVisibility() {
   const [isVisible, setIsVisible] = useState(true);
-  
+
   useEffect(() => {
     const handleVisibilityChange = () => {
       setIsVisible(!document.hidden);
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
-  
+
   return isVisible;
 }
 
@@ -63,28 +71,28 @@ export function usePageVisibility() {
  */
 export function useIdleDetection(idleTime = 60000) {
   const [isIdle, setIsIdle] = useState(false);
-  
+
   useEffect(() => {
     let idleTimer: ReturnType<typeof setTimeout>;
-    
+
     const resetIdleTimer = () => {
       clearTimeout(idleTimer);
       setIsIdle(false);
       idleTimer = setTimeout(() => setIsIdle(true), idleTime);
     };
-    
+
     // Throttle the event handlers to prevent excessive function calls
     const throttledResetTimer = throttle(resetIdleTimer, 500);
-    
+
     // Add event listeners for user activity
     window.addEventListener('mousemove', throttledResetTimer);
     window.addEventListener('keypress', throttledResetTimer);
     window.addEventListener('touchstart', throttledResetTimer);
     window.addEventListener('scroll', throttledResetTimer);
-    
+
     // Initialize the timer
     resetIdleTimer();
-    
+
     // Clean up
     return () => {
       clearTimeout(idleTimer);
@@ -94,7 +102,7 @@ export function useIdleDetection(idleTime = 60000) {
       window.removeEventListener('scroll', throttledResetTimer);
     };
   }, [idleTime]);
-  
+
   return isIdle;
 }
 
@@ -105,8 +113,12 @@ export function prefetchResourcesWhenIdle(resources: string[]) {
   if (typeof window === 'undefined' || !('requestIdleCallback' in window)) {
     return;
   }
-  
-  (window as any).requestIdleCallback(() => {
+
+  interface WindowWithIdleCallback extends Window {
+    requestIdleCallback: (callback: () => void) => void;
+  }
+
+  (window as WindowWithIdleCallback).requestIdleCallback(() => {
     resources.forEach(resource => {
       const link = document.createElement('link');
       link.rel = 'prefetch';
@@ -125,29 +137,29 @@ export function useLazyLoadImages() {
     if (!('IntersectionObserver' in window)) {
       return;
     }
-    
+
     const lazyImages = document.querySelectorAll('img[data-src]');
-    
+
     const imageObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const img = entry.target as HTMLImageElement;
           const src = img.dataset.src;
-          
+
           if (src) {
             img.src = src;
             img.removeAttribute('data-src');
           }
-          
+
           imageObserver.unobserve(img);
         }
       });
     });
-    
+
     lazyImages.forEach(img => {
       imageObserver.observe(img);
     });
-    
+
     return () => {
       lazyImages.forEach(img => {
         imageObserver.unobserve(img);
@@ -162,11 +174,11 @@ export function useLazyLoadImages() {
 export function useRenderTime(componentName: string) {
   useEffect(() => {
     const startTime = performance.now();
-    
+
     return () => {
       const endTime = performance.now();
       const renderTime = endTime - startTime;
-      
+
       // Only log in development
       if (process.env.NODE_ENV === 'development') {
         console.log(`[Performance] ${componentName} rendered in ${renderTime.toFixed(2)}ms`);

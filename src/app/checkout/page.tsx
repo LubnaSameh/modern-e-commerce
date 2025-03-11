@@ -3,15 +3,25 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, ArrowLeft, CheckCircle, User, LogIn } from "lucide-react";
+import { ChevronRight, ArrowLeft, CheckCircle, User } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useSession } from "next-auth/react";
+
+// Define interface for cart items
+interface CartItem {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    category?: string;
+}
 
 export default function CheckoutPage() {
     // Client-side only state to avoid hydration issues
     const [mounted, setMounted] = useState(false);
-    const [cartItems, setCartItems] = useState<any[]>([]);
-    const [totalItems, setTotalItems] = useState(0);
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    // const [totalItems, setTotalItems] = useState(0); // Commented out as it's unused
     const [subtotal, setSubtotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const { data: session } = useSession();
@@ -39,7 +49,6 @@ export default function CheckoutPage() {
         // Get the initial state
         const cart = useCartStore.getState();
         setCartItems(cart.items);
-        setTotalItems(cart.totalItems);
         setSubtotal(cart.subtotal);
         setMounted(true);
         setLoading(false);
@@ -47,7 +56,6 @@ export default function CheckoutPage() {
         // Subscribe to store changes
         const unsubscribe = useCartStore.subscribe((state) => {
             setCartItems(state.items);
-            setTotalItems(state.totalItems);
             setSubtotal(state.subtotal);
         });
 
@@ -87,7 +95,7 @@ export default function CheckoutPage() {
 
                 // In a real app, here you would handle account creation if formData.createAccount is true
                 // For now, we'll just simulate it for the UI
-                
+
                 setFormStep(3); // Show success
             }, 1500);
         }
@@ -124,11 +132,11 @@ export default function CheckoutPage() {
                         <div className="w-20 h-20 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="h-10 w-10 text-green-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Order Placed Successfully!</h1>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            Thank you for your purchase. We've sent you an email with your order details.
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Order Confirmed!</h1>
+                        <p className="text-gray-600 dark:text-gray-400 mb-8">
+                            Thank you for your purchase. We&apos;ve sent you an email with your order details.
                         </p>
-                        
+
                         {/* Account Creation Confirmation - Only show if not logged in and account was created */}
                         {!session && formData.createAccount && (
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6 text-left">
@@ -141,7 +149,7 @@ export default function CheckoutPage() {
                                 </p>
                             </div>
                         )}
-                        
+
                         <div className="space-y-4">
                             <Link
                                 href="/shop"
@@ -404,7 +412,7 @@ export default function CheckoutPage() {
                                                             Create an account for faster checkout next time
                                                         </label>
                                                     </div>
-                                                    
+
                                                     {formData.createAccount && (
                                                         <div className="mt-3">
                                                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

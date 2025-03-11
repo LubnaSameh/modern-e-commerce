@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { fixedProducts } from '@/lib/fixedData';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import Image from 'next/image';
 
 interface ProductPageProps {
   params: {
@@ -13,13 +14,26 @@ interface ProductPageProps {
   };
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  mainImage: string;
+  images?: string[];
+  category?: string;
+  stock?: number;
+  rating?: number;
+  reviews?: number;
+}
+
 export default function FixedProductPage({ params }: ProductPageProps) {
   const { id } = params;
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
-  
+
   // Get cart and wishlist functions
   const addToCart = useCartStore(state => state.addItem);
   const addToWishlist = useWishlistStore(state => state.addItem);
@@ -27,14 +41,14 @@ export default function FixedProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     // Find the product from fixed data
     const foundProduct = fixedProducts.find(p => p.id === id);
-    
+
     if (foundProduct) {
       setProduct(foundProduct);
     } else {
       // Product not found
       console.error("Product not found");
     }
-    
+
     setLoading(false);
   }, [id]);
 
@@ -53,7 +67,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: product.mainImage,
         quantity
       });
     }
@@ -66,7 +80,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image
+        image: product.mainImage
       });
     }
   };
@@ -98,7 +112,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Product Not Found</h2>
           <p className="text-gray-600 mb-8">The product you are looking for does not exist or has been removed.</p>
-          <button 
+          <button
             onClick={() => router.push('/shop')}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -113,7 +127,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb and Back Button */}
       <div className="flex items-center mb-6">
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
         >
@@ -132,11 +146,13 @@ export default function FixedProductPage({ params }: ProductPageProps) {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Product Image */}
         <div className="w-full md:w-1/2">
-          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square">
-            <img 
-              src={product.image} 
-              alt={product.name} 
-              className="w-full h-full object-cover"
+          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square relative">
+            <Image
+              src={product.mainImage}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
             />
           </div>
         </div>
@@ -146,23 +162,23 @@ export default function FixedProductPage({ params }: ProductPageProps) {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {product.name}
           </h1>
-          
+
           <div className="flex items-center mb-4">
             <span className="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
               {product.category}
             </span>
           </div>
-          
+
           <div className="mb-6">
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
               ${product.price.toFixed(2)}
             </span>
           </div>
-          
+
           <div className="prose prose-sm dark:prose-invert max-w-none mb-6">
             <p>{product.description}</p>
           </div>
-          
+
           {/* Quantity Input */}
           <div className="flex items-center mb-6">
             <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">
@@ -178,7 +194,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
               className="w-20 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
             <button
@@ -188,7 +204,7 @@ export default function FixedProductPage({ params }: ProductPageProps) {
               <ShoppingCart className="mr-2 h-5 w-5" />
               Add to Cart
             </button>
-            
+
             <button
               onClick={handleAddToWishlist}
               className="flex items-center justify-center py-3 px-6 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 font-medium transition-colors w-full"

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import Image from "next/image";
 
 // Define deterministic values instead of using Math.random()
 const circleProps = [
@@ -16,14 +16,8 @@ const circleProps = [
 ];
 
 export default function PromoBanner() {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
     return (
-        <section className="py-8 sm:py-12 md:py-16 px-3 sm:px-4 relative overflow-hidden bg-white dark:bg-gray-950">
+        <section className="bg-gradient-to-br from-blue-900 to-indigo-900 text-white py-16 md:py-24 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600 to-indigo-700 dark:from-violet-800/90 dark:to-indigo-900/80"></div>
 
             {/* Animated background circles */}
@@ -125,10 +119,12 @@ export default function PromoBanner() {
                                         transition={{ duration: 0.5, delay: 0.2 }}
                                         className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-[3/4] bg-white/10 backdrop-blur-md border border-white/20"
                                     >
-                                        <img
+                                        <Image
                                             src="https://images.unsplash.com/photo-1578681994506-b8f463449011?q=80&w=580&auto=format&fit=crop"
                                             alt="Summer sale product - accessories"
-                                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            className="object-cover hover:scale-110 transition-transform duration-700"
                                         />
                                         <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/20 backdrop-blur-md rounded-lg px-2 py-1 text-white text-xs sm:text-sm">
                                             -30%
@@ -142,10 +138,12 @@ export default function PromoBanner() {
                                         transition={{ duration: 0.5, delay: 0.4 }}
                                         className="relative rounded-xl md:rounded-2xl overflow-hidden flex-1 bg-white/10 backdrop-blur-md border border-white/20"
                                     >
-                                        <img
+                                        <Image
                                             src="https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=580&auto=format&fit=crop"
                                             alt="Summer sale product - shoes"
-                                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            className="object-cover hover:scale-110 transition-transform duration-700"
                                         />
                                         <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/20 backdrop-blur-md rounded-lg px-2 py-1 text-white text-xs sm:text-sm">
                                             -50%
@@ -160,10 +158,12 @@ export default function PromoBanner() {
                                     transition={{ duration: 0.5, delay: 0.6 }}
                                     className="relative rounded-xl md:rounded-2xl overflow-hidden h-full bg-white/10 backdrop-blur-md border border-white/20"
                                 >
-                                    <img
+                                    <Image
                                         src="https://images.unsplash.com/photo-1472417583565-62e7bdeda490?q=80&w=987&auto=format&fit=crop"
                                         alt="Summer sale product - dress"
-                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
+                                        fill
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        className="object-cover hover:scale-110 transition-transform duration-700"
                                     />
                                     <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/20 backdrop-blur-md rounded-lg px-2 py-1 text-white text-xs sm:text-sm">
                                         -40%

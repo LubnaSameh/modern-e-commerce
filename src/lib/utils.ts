@@ -67,22 +67,22 @@ export function generateRandomString(length: number = 8): string {
 /**
  * Debounce function to limit how often a function can be called
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
     wait: number
 ): (...args: Parameters<T>) => void {
     let timeout: ReturnType<typeof setTimeout> | null = null;
-    
-    return function(...args: Parameters<T>) {
+
+    return function (...args: Parameters<T>) {
         const later = () => {
             timeout = null;
             func(...args);
         };
-        
+
         if (timeout !== null) {
             clearTimeout(timeout);
         }
-        
+
         timeout = setTimeout(later, wait);
     };
 }
@@ -90,13 +90,13 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function to limit how often a function can be called
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
     func: T,
     limit: number
 ): (...args: Parameters<T>) => void {
     let inThrottle = false;
-    
-    return function(...args: Parameters<T>) {
+
+    return function (...args: Parameters<T>) {
         if (!inThrottle) {
             func(...args);
             inThrottle = true;
@@ -125,7 +125,7 @@ export function getLowQualityImageUrl(url: string): string {
     if (url.includes('unsplash.com')) {
         return url.replace(/w=\d+/, 'w=20').replace(/q=\d+/, 'q=20');
     }
-    
+
     // For other images, you might need to implement your own solution
     // or use a service like Cloudinary, Imgix, etc.
     return url;

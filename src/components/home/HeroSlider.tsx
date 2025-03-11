@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,7 +19,7 @@ const animationCircles = Array(12).fill(0).map((_, i) => ({
 export default function HeroSlider() {
     const [activeSlide, setActiveSlide] = useState(0);
     const [animating, setAnimating] = useState(false);
-    const { theme, resolvedTheme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const sliderRef = useRef<HTMLDivElement>(null);
     // Add mounted state to prevent hydration mismatch
     const [mounted, setMounted] = useState(false);
@@ -92,6 +92,21 @@ export default function HeroSlider() {
         }
     ];
 
+    const goToSlide = useCallback((index: number) => {
+        if (animating) return;
+        setAnimating(true);
+        setActiveSlide(index);
+        setTimeout(() => setAnimating(false), 800);
+    }, [animating]);
+
+    const nextSlide = useCallback(() => {
+        goToSlide((activeSlide + 1) % slides.length);
+    }, [activeSlide, goToSlide, slides.length]);
+
+    const prevSlide = useCallback(() => {
+        goToSlide((activeSlide - 1 + slides.length) % slides.length);
+    }, [activeSlide, goToSlide, slides.length]);
+
     useEffect(() => {
         const interval = setInterval(() => {
             if (!animating) {
@@ -99,22 +114,7 @@ export default function HeroSlider() {
             }
         }, 6000);
         return () => clearInterval(interval);
-    }, [activeSlide, animating]);
-
-    const goToSlide = (index: number) => {
-        if (animating) return;
-        setAnimating(true);
-        setActiveSlide(index);
-        setTimeout(() => setAnimating(false), 800);
-    };
-
-    const nextSlide = () => {
-        goToSlide((activeSlide + 1) % slides.length);
-    };
-
-    const prevSlide = () => {
-        goToSlide((activeSlide - 1 + slides.length) % slides.length);
-    };
+    }, [animating, nextSlide]);
 
     return (
         <div className="relative  py-4 md:py-8 px-2 md:px-4">

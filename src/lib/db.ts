@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 declare global {
-    var prisma: PrismaClient | undefined;
+    let prisma: PrismaClient | undefined;
 }
 
 // PrismaClient is attached to the `global` object in development to prevent

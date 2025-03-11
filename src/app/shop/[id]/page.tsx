@@ -242,20 +242,53 @@ const getSimilarProducts = (productId: string, category: string) => {
         .slice(0, 4);
 };
 
+// Add interface for product structure
+interface Product {
+    id: string;
+    name: string;
+    price: number;
+    description: string;
+    rating?: number;
+    reviewCount?: number;
+    images: string[];
+    stock: number;
+    category: string;
+    isNew: boolean;
+    features: string[];
+    specifications: Record<string, string>;
+    mainImage?: string;
+    productImages?: Array<{ url: string }>;
+    createdAt?: string;
+}
+
+interface APIProduct {
+    id: string;
+    name: string;
+    price: number;
+    description: string;
+    stock: number;
+    category?: {
+        name: string;
+    };
+    mainImage?: string;
+    productImages?: Array<{ url: string }>;
+    createdAt: string;
+}
+
 export default function ProductDetailPage() {
     const params = useParams();
     const router = useRouter();
     const productId = params.id as string;
-    const [product, setProduct] = useState<any>(null);
+    const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
-    const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+    const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
-                
+
                 // Check if this is a sample product
                 if (productId.startsWith('sample-')) {
                     const sampleProduct = sampleProducts.find(p => p.id === productId);
@@ -272,7 +305,7 @@ export default function ProductDetailPage() {
 
                 // Fetch product from API
                 const response = await fetch(`/api/products/${productId}`);
-                
+
                 if (!response.ok) {
                     if (response.status === 404) {
                         setError('Product not found');
@@ -285,7 +318,7 @@ export default function ProductDetailPage() {
 
                 const data = await response.json();
                 console.log('Product data from API:', data);
-                
+
                 // Handle image URL properly - convert relative URLs to absolute
                 let mainImageUrl = 'https://via.placeholder.com/400';
                 if (data.mainImage) {
@@ -298,11 +331,11 @@ export default function ProductDetailPage() {
                         mainImageUrl = `${baseUrl}${data.mainImage}`;
                     }
                 }
-                
+
                 // Process additional images if available
-                const additionalImages = (data.productImages || []).map((img: any) => {
+                const additionalImages = (data.productImages || []).map((img: { url: string }) => {
                     if (!img.url) return null;
-                    
+
                     if (img.url.startsWith('http')) {
                         return img.url;
                     } else {
@@ -310,7 +343,7 @@ export default function ProductDetailPage() {
                         return `${baseUrl}${img.url}`;
                     }
                 }).filter(Boolean);
-                
+
                 // Convert API product to the format expected by the UI
                 const formattedProduct = {
                     id: data.id,
@@ -336,44 +369,44 @@ export default function ProductDetailPage() {
                         "ID": data.id
                     }
                 };
-                
+
                 setProduct(formattedProduct);
-                
+
                 // Fetch related products from the same category
                 try {
                     const categoryName = data.category?.name;
                     console.log('Attempting to fetch related products for category:', categoryName);
                     console.log('Full category data:', data.category);
-                    
+
                     if (categoryName) {
                         // First try to get real products from the same category, without any limit to get ALL products
                         // This ensures we see all database products added from the dashboard
                         const relatedUrl = `/api/products?category=${encodeURIComponent(categoryName)}`;
                         console.log('Fetching related products from:', relatedUrl);
-                        
+
                         const relatedResponse = await fetch(relatedUrl);
-                        
+
                         if (relatedResponse.ok) {
                             const relatedData = await relatedResponse.json();
                             console.log('Related products API response:', relatedData);
-                            
+
                             const relatedApiProducts = relatedData.products || [];
                             console.log('Total products returned:', relatedApiProducts.length);
-                            
+
                             // Filter out the current product
-                            const otherProducts = relatedApiProducts.filter((p: any) => p.id !== productId);
-                            
+                            const otherProducts = relatedApiProducts.filter((p: APIProduct) => p.id !== productId);
+
                             // Log the number of actual database products found for debugging
                             console.log(`Found ${otherProducts.length} actual database products in category ${categoryName}`);
-                            
+
                             if (otherProducts.length > 0) {
                                 // Sort products by newest (createdAt) first to prioritize newly added products
-                                const sortedProducts = otherProducts.sort((a: any, b: any) => {
+                                const sortedProducts = otherProducts.sort((a: APIProduct, b: APIProduct) => {
                                     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                                 });
-                                
+
                                 // Format ONLY the API products (actual database products from dashboard)
-                                const formattedApiProducts = sortedProducts.map((p: any) => {
+                                const formattedApiProducts = sortedProducts.map((p: APIProduct) => {
                                     // Handle image URL properly
                                     let imageUrl = 'https://via.placeholder.com/400';
                                     if (p.mainImage) {
@@ -384,7 +417,7 @@ export default function ProductDetailPage() {
                                             imageUrl = `${baseUrl}${p.mainImage}`;
                                         }
                                     }
-                                    
+
                                     return {
                                         id: p.id,
                                         name: p.name,
@@ -394,10 +427,10 @@ export default function ProductDetailPage() {
                                         stock: p.stock || 10,
                                         category: p.category?.name || 'Other',
                                         // Add a flag to identify these are real products from DB
-                                        isRealProduct: true 
+                                        isRealProduct: true
                                     };
                                 });
-                                
+
                                 // If we have enough real products (at least 2), only show them
                                 if (formattedApiProducts.length >= 1) {
                                     // Take only up to 4 related products from the database
@@ -410,12 +443,12 @@ export default function ProductDetailPage() {
                                 else if (formattedApiProducts.length > 0) {
                                     // Filter sample products by category
                                     const sampleCategoryProducts = sampleProducts
-                                        .filter(p => 
-                                            p.category.toLowerCase() === categoryName.toLowerCase() && 
-                                            !formattedApiProducts.some((lp: {name: string}) => lp.name === p.name)
+                                        .filter(p =>
+                                            p.category.toLowerCase() === categoryName.toLowerCase() &&
+                                            !formattedApiProducts.some((lp: { name: string }) => lp.name === p.name)
                                         )
                                         .slice(0, 4 - formattedApiProducts.length);
-                                    
+
                                     console.log(`Showing ${formattedApiProducts.length} real database products and ${sampleCategoryProducts.length} sample products`);
                                     setRelatedProducts([...formattedApiProducts, ...sampleCategoryProducts]);
                                 }
@@ -423,13 +456,13 @@ export default function ProductDetailPage() {
                                 // Fallback to sample products ONLY if no real products are found
                                 const categoryForSamples = data.category?.name || '';
                                 console.log(`No real products found. Fallback to sample products in category ${categoryForSamples}`);
-                                
-                                const sampleRelatedProducts = categoryForSamples ? 
+
+                                const sampleRelatedProducts = categoryForSamples ?
                                     sampleProducts
                                         .filter(p => p.category.toLowerCase() === categoryForSamples.toLowerCase())
-                                        .slice(0, 4) : 
+                                        .slice(0, 4) :
                                     sampleProducts.slice(0, 4);
-                                
+
                                 setRelatedProducts(sampleRelatedProducts);
                             }
                         }
@@ -438,10 +471,10 @@ export default function ProductDetailPage() {
                     console.error("Error fetching related products:", relatedError);
                     // Fallback to sample data
                     const categoryForSamples = data.category?.name || '';
-                    const sampleRelatedProducts = categoryForSamples ? 
-                        sampleProducts.filter(p => p.category === categoryForSamples).slice(0, 4) : 
+                    const sampleRelatedProducts = categoryForSamples ?
+                        sampleProducts.filter(p => p.category === categoryForSamples).slice(0, 4) :
                         sampleProducts.slice(0, 4);
-                    
+
                     setRelatedProducts(sampleRelatedProducts);
                 }
             } catch (err) {
@@ -556,7 +589,7 @@ export default function ProductDetailPage() {
                 <div className="mt-8 text-gray-500 dark:text-gray-400">
                     <p>Debug: Found {relatedProducts.length} related products</p>
                 </div>
-                
+
                 {/* Render RelatedProducts even if empty, for debugging */}
                 <RelatedProducts
                     title="You may also like"

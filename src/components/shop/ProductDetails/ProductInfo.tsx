@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Star, ShoppingBag, Heart, Share2 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -36,21 +36,21 @@ export default function ProductInfo({
         colors.length > 0 ? colors[0] : undefined
     );
     const [isFavorite, setIsFavorite] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    // We'll use this variable to ensure we don't access client-side APIs during SSR
+    const [isClient, setIsClient] = useState(false);
 
-    // Get addItem function from cart store - using direct store import to prevent SSR issues
-    const addItem = useCartStore.getState().addItem;
-    
+    // Get cart store functions - using destructuring to access the function
+    const { addItem } = useCartStore();
+
     // Get wishlist store functions
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
 
     // Check if product is in wishlist on component mount
     useEffect(() => {
-        setMounted(true);
+        setIsClient(true);
         if (typeof window !== 'undefined') {
             useWishlistStore.persist.rehydrate();
-            const inWishlist = isInWishlist(id);
-            setIsFavorite(inWishlist);
+            setIsFavorite(isInWishlist(id));
         }
     }, [id, isInWishlist]);
 
@@ -66,30 +66,25 @@ export default function ProductInfo({
 
     // Handle add to cart
     const handleAddToCart = () => {
-        // Only run on client side
-        if (typeof window === 'undefined') return;
+        if (!isClient) return; // Don't execute if not client-side
 
-        // Use the most current version of addItem
-        useCartStore.getState().addItem({
+        addItem({
             id,
             name,
             price,
-            image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300", // Placeholder image
-            stock,
+            quantity,
+            image: typeof window !== 'undefined' ? window.location.origin + '/images/products/product-1.jpg' : '',
             color: selectedColor
-        }, quantity);
-
-        toast.success(`${quantity} ${quantity > 1 ? 'items' : 'item'} added to cart!`, {
-            position: "top-right",
-            autoClose: 2000
         });
+
+        toast.success(`${name} added to cart!`);
     };
 
     // Toggle favorite
     const toggleFavorite = () => {
         const newState = !isFavorite;
         setIsFavorite(newState);
-        
+
         if (newState) {
             // Add to wishlist
             addToWishlist({

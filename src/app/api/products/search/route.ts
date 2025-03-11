@@ -3,23 +3,14 @@ import db from '@/lib/db';
 import { searchFixedProducts } from '@/lib/fixedData';
 
 // Define proper types to avoid 'any' type issues
-interface ProductImage {
-    id: string;
-    url: string;
-}
+// إزالة واجهة ProductImage غير المستخدمة
+// interface ProductImage {
+//     id: string;
+//     url: string;
+// }
 
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    mainImage: string;
-    productImages: ProductImage[];
-    category: {
-        id: string;
-        name: string;
-    };
-}
+// إزالة واجهة Product غير المستخدمة
+// interface Product {
 
 interface FormattedProduct {
     id: string;

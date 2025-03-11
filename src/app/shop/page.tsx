@@ -9,6 +9,25 @@ import SortDropdown from "@/components/shop/SortDropdown";
 import Pagination from "@/components/shop/Pagination";
 import { ProductFilter } from "@/components/shop/ProductGrid";
 
+// Add this interface to define the product type
+interface ProductType {
+    id: string | number;
+    name: string;
+    price: number;
+    rating: number;
+    image: string;
+    stock: number;
+    category: string;
+    description?: string;
+    mainImage?: string;
+    category?: {
+        name: string;
+    };
+}
+
+// Add this interface for sort options
+type SortOption = 'price-asc' | 'price-desc' | 'rating' | 'newest';
+
 // Sample products data for demonstration
 const sampleProducts = [
     {
@@ -127,13 +146,13 @@ export default function ShopPage() {
     const [filters, setFilters] = useState<ProductFilter>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-    
+
     // State for products and loading
-    const [allProducts, setAllProducts] = useState<any[]>([]);
-    const [paginatedProducts, setPaginatedProducts] = useState<any[]>([]);
+    const [allProducts, setAllProducts] = useState<ProductType[]>([]);
+    const [paginatedProducts, setPaginatedProducts] = useState<ProductType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [totalPages, setTotalPages] = useState(1);
-    
+
     // Define items per page - 9 items (3x3 grid)
     const ITEMS_PER_PAGE = 9;
 
@@ -151,7 +170,7 @@ export default function ShopPage() {
 
     // Handle sort
     const handleSort = useCallback((sortBy: string) => {
-        setFilters(prev => ({ ...prev, sortBy: sortBy as any }));
+        setFilters(prev => ({ ...prev, sortBy: sortBy as SortOption }));
     }, []);
 
     // Handle page change
@@ -173,15 +192,15 @@ export default function ShopPage() {
                 // Try to fetch real products from API
                 try {
                     const response = await fetch('/api/products');
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         const apiProducts = data.products || [];
-                        
+
                         // If we have real products, combine them with sample products
                         if (apiProducts.length > 0) {
                             // Convert API products to the format expected by ProductCard
-                            const convertedApiProducts = apiProducts.map((product: any) => ({
+                            const convertedApiProducts = apiProducts.map((product: ProductType) => ({
                                 id: product.id,
                                 name: product.name,
                                 price: product.price,
@@ -190,14 +209,14 @@ export default function ShopPage() {
                                 stock: product.stock,
                                 category: product.category?.name || 'Other',
                             }));
-                            
+
                             // Filter out sample products that have the same name as API products
-                            const sampleWithoutDuplicates = sampleProducts.filter(sample => 
-                                !convertedApiProducts.some((api: any) => 
+                            const sampleWithoutDuplicates = sampleProducts.filter(sample =>
+                                !convertedApiProducts.some((api: ProductType) =>
                                     api.name.toLowerCase() === sample.name.toLowerCase()
                                 )
                             );
-                            
+
                             productsToShow = [...convertedApiProducts, ...sampleWithoutDuplicates];
                         }
                     }
@@ -211,27 +230,27 @@ export default function ShopPage() {
 
                 // Filter by category if specified
                 if (filters.category && filters.category !== 'All') {
-                    filteredProducts = filteredProducts.filter(product => 
+                    filteredProducts = filteredProducts.filter(product =>
                         product.category === filters.category
                     );
                 }
 
                 // Filter by price range if specified
                 if (filters.minPrice !== undefined) {
-                    filteredProducts = filteredProducts.filter(product => 
+                    filteredProducts = filteredProducts.filter(product =>
                         product.price >= filters.minPrice!
                     );
                 }
 
                 if (filters.maxPrice !== undefined) {
-                    filteredProducts = filteredProducts.filter(product => 
+                    filteredProducts = filteredProducts.filter(product =>
                         product.price <= filters.maxPrice!
                     );
                 }
 
                 // Filter by minimum rating if specified
                 if (filters.minRating !== undefined) {
-                    filteredProducts = filteredProducts.filter(product => 
+                    filteredProducts = filteredProducts.filter(product =>
                         product.rating >= filters.minRating!
                     );
                 }
@@ -239,8 +258,8 @@ export default function ShopPage() {
                 // Filter by search term if specified
                 if (filters.searchTerm) {
                     const searchTermLower = filters.searchTerm.toLowerCase();
-                    filteredProducts = filteredProducts.filter(product => 
-                        product.name.toLowerCase().includes(searchTermLower) || 
+                    filteredProducts = filteredProducts.filter(product =>
+                        product.name.toLowerCase().includes(searchTermLower) ||
                         product.category.toLowerCase().includes(searchTermLower)
                     );
                 }
@@ -265,7 +284,7 @@ export default function ShopPage() {
 
                 // Store all filtered products
                 setAllProducts(filteredProducts);
-                
+
                 // Calculate total pages
                 const total = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
                 setTotalPages(total);
@@ -287,7 +306,7 @@ export default function ShopPage() {
         // Calculate pagination
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIndex = startIndex + ITEMS_PER_PAGE;
-        
+
         // Get products for current page
         const currentPageProducts = allProducts.slice(startIndex, endIndex);
         setPaginatedProducts(currentPageProducts);
@@ -316,7 +335,7 @@ export default function ShopPage() {
                 <div className="container mx-auto max-w-6xl px-4 py-8">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Shop</h1>
                     <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
-                        Browse our collection of high-quality products. Use the filters to find exactly what you're looking for.
+                        Browse our collection of high-quality products. Use the filters to find exactly what you&apos;re looking for.
                     </p>
                 </div>
             </div>
@@ -404,8 +423,8 @@ export default function ShopPage() {
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[...Array(ITEMS_PER_PAGE)].map((_, index) => (
-                                    <div 
-                                        key={index} 
+                                    <div
+                                        key={index}
                                         className="bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse h-[380px]"
                                     />
                                 ))}
@@ -413,12 +432,12 @@ export default function ShopPage() {
                         ) : paginatedProducts.length === 0 ? (
                             <div className="text-center py-16">
                                 <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">No products found</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                    Try adjusting your filters or search term to find what you're looking for.
+                                <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mx-auto">
+                                    Try adjusting your filters or search term to find what you&apos;re looking for.
                                 </p>
                             </div>
                         ) : (
-                            <motion.div 
+                            <motion.div
                                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                                 variants={container}
                                 initial="hidden"

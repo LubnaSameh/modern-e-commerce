@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+// إزالة الاستيرادات غير المستخدمة
+// import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+// import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useTheme } from 'next-themes';
+// import { useTheme } from 'next-themes';
 
 export default function ForgotPasswordPage() {
     // State variables for form field and UI state
     // متغيرات الحالة لحقول النموذج وحالة واجهة المستخدم
-    const router = useRouter();
-    const { theme } = useTheme();
+    // const router = useRouter();
+    // const { theme } = useTheme();
     const [email, setEmail] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
@@ -75,7 +76,7 @@ export default function ForgotPasswordPage() {
                             <p className="text-center text-gray-700 dark:text-gray-300 mb-6">
                                 If an account exists with the email <br />
                                 <span className="font-medium">{email}</span>, <br />
-                                we've sent instructions to reset your password.
+                                we&apos;ve sent instructions to reset your password.
                             </p>
 
                             <div className="text-center">
@@ -102,7 +103,7 @@ export default function ForgotPasswordPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                     <div className="px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700">
                         <h1 className="text-2xl font-bold text-white text-center">Reset Your Password</h1>
-                        <p className="text-blue-100 text-center mt-2">We'll send you instructions by email</p>
+                        <p className="text-blue-100 text-center mt-2">We&apos;ll send you instructions by email</p>
                     </div>
 
                     <div className="p-8">
@@ -113,7 +114,7 @@ export default function ForgotPasswordPage() {
                         )}
 
                         <p className="text-gray-700 dark:text-gray-300 mb-6">
-                            Enter your email address and we'll send you instructions to reset your password.
+                            Enter your email address and we&apos;ll send you instructions to reset your password.
                         </p>
 
                         <form onSubmit={handleSubmit}>

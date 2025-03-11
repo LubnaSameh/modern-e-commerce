@@ -150,7 +150,7 @@ export function OrdersTable() {
     const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
     const [sortField, setSortField] = useState<SortField>("date");
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-    const [orders, setOrders] = useState<Order[]>(sampleOrders);
+    const [orders] = useState<Order[]>(sampleOrders);
 
     // Filter orders based on search term and status filter
     const filteredOrders = orders.filter((order) => {
@@ -265,8 +265,8 @@ export function OrdersTable() {
                                             document.getElementById("status-dropdown")?.classList.add("hidden");
                                         }}
                                         className={`block w-full text-left px-4 py-2 text-sm ${statusFilter === status
-                                                ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
-                                                : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+                                            ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
+                                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
                                             }`}
                                         role="menuitem"
                                     >

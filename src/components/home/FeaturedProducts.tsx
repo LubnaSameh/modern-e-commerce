@@ -86,22 +86,24 @@ const sampleProducts = [
 const MemoizedProductCard = memo(ProductCard);
 
 // Memoized category button
-const CategoryButton = memo(({ category, isActive, onClick }: { 
-    category: string; 
-    isActive: boolean; 
-    onClick: () => void 
+const CategoryButton = memo(({ category, isActive, onClick }: {
+    category: string;
+    isActive: boolean;
+    onClick: () => void
 }) => (
     <button
         onClick={onClick}
-        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${
-            isActive
+        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${isActive
                 ? "bg-primary text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
-        }`}
+            }`}
     >
         {category}
     </button>
 ));
+
+// Add display name
+CategoryButton.displayName = "CategoryButton";
 
 export default function FeaturedProducts() {
     const [activeTab, setActiveTab] = useState("All");
@@ -109,7 +111,7 @@ export default function FeaturedProducts() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const INITIAL_DISPLAY_COUNT = 8;
-    
+
     // Check if user is on a slow connection
     const isSlowConnection = useSlowConnection();
 
@@ -118,7 +120,7 @@ export default function FeaturedProducts() {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                
+
                 // Use cached data if available (cache for 5 minutes)
                 const data = await fetchWithCache<ApiResponse>('/api/products?limit=8', {}, 5 * 60 * 1000);
                 const apiProducts = data.products || [];
@@ -135,7 +137,7 @@ export default function FeaturedProducts() {
             } catch (error) {
                 console.error('Error fetching products:', error);
                 setError(error instanceof Error ? error.message : 'An error occurred');
-                
+
                 // Fallback to sample products on error
                 setProducts(sampleProducts);
             } finally {
@@ -157,7 +159,7 @@ export default function FeaturedProducts() {
             ? products
             : products.filter(product => product.category && product.category.name === activeTab);
     }, [products, activeTab]);
-    
+
     // Memoize displayed products
     const displayedProducts = useMemo(() => {
         return filteredProducts.slice(0, INITIAL_DISPLAY_COUNT);
@@ -213,20 +215,20 @@ export default function FeaturedProducts() {
                                     key={product.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ 
-                                        duration: isSlowConnection ? 0 : 0.3, 
-                                        delay: isSlowConnection ? 0 : index * 0.1 
+                                    transition={{
+                                        duration: isSlowConnection ? 0 : 0.3,
+                                        delay: isSlowConnection ? 0 : index * 0.1
                                     }}
                                 >
                                     <MemoizedProductCard product={product} />
                                 </motion.div>
                             ))}
                         </div>
-                        
+
                         {/* View All Products Link */}
                         {filteredProducts.length > INITIAL_DISPLAY_COUNT && (
                             <div className="flex justify-center mt-6 sm:mt-10">
-                                <Link 
+                                <Link
                                     href={`/shop${activeTab !== "All" ? `?category=${encodeURIComponent(activeTab)}` : ''}`}
                                     className="bg-primary hover:bg-primary-dark text-white text-sm sm:text-base font-medium py-2 px-6 sm:px-8 rounded-full transition-colors"
                                 >

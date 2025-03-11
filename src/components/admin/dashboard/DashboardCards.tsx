@@ -58,13 +58,6 @@ const StatCard = ({ title, value, icon, change, description, isLoading }: StatCa
     );
 };
 
-interface StatsData {
-    totalOrders: number;
-    totalProducts: number;
-    totalUsers: number;
-    totalRevenue: number;
-}
-
 // Fixed data for the dashboard
 const fixedStats = {
     totalRevenue: 15890.75,
@@ -76,13 +69,11 @@ const fixedStats = {
 export function DashboardCards() {
     const [realProducts, setRealProducts] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchRealProducts = async () => {
             try {
                 setIsLoading(true);
-                setError(null);
 
                 console.log('Fetching real product count...');
                 const response = await fetch('/api/admin/stats', {

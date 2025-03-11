@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Save, Upload, X } from "lucide-react";
+import { Save, Upload } from "lucide-react";
 
 type SettingsFormData = {
     storeName: string;

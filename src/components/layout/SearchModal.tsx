@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, X, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
+import Image from "next/image";
 
 // Define the search result type to match API response
 interface SearchResult {
@@ -50,7 +51,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
-        
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -67,7 +68,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         if (isOpen) {
             document.addEventListener('keydown', handleEscKey);
         }
-        
+
         return () => {
             document.removeEventListener('keydown', handleEscKey);
         };
@@ -91,7 +92,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
             setIsLoading(true);
             setError(null);
-            
+
             try {
                 console.log(`Fetching search results for: "${debouncedSearchTerm}"`);
                 const response = await fetch(`/api/products/search?q=${encodeURIComponent(debouncedSearchTerm)}`, {
@@ -100,23 +101,23 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         'Content-Type': 'application/json',
                     },
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     console.error('Search error:', data.error || 'Unknown error', 'Status:', response.status);
                     setError(data.error || `Failed to search products (${response.status}). Please try again.`);
                     setSearchResults([]);
                     return;
                 }
-                
+
                 if (!Array.isArray(data)) {
                     console.error('Invalid search response format:', data);
                     setError(typeof data.error === 'string' ? data.error : 'Received invalid data format from server');
                     setSearchResults([]);
                     return;
                 }
-                
+
                 console.log(`Found ${data.length} search results`);
                 setSearchResults(data);
             } catch (error) {
@@ -153,7 +154,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20 px-4">
-            <div 
+            <div
                 ref={modalRef}
                 className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden transition-all transform"
             >
@@ -197,7 +198,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                 <AlertTriangle className="h-8 w-8 text-amber-500" />
                             </div>
                             <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-                            <button 
+                            <button
                                 onClick={() => setError(null)}
                                 className="mt-2 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                             >
@@ -207,13 +208,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     ) : searchResults.length > 0 ? (
                         <div className="p-2">
                             {searchResults.map((product) => (
-                                <div 
+                                <div
                                     key={product.id}
                                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer"
                                     onClick={() => {
                                         // Check if it's a fixed product (IDs start with 'fixed-')
                                         const isFixedProduct = product.id.startsWith('fixed-');
-                                        
+
                                         // Use the appropriate route
                                         if (isFixedProduct) {
                                             router.push(`/fixed-products/${product.id}`);
@@ -225,11 +226,15 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                 >
                                     <div className="flex items-center space-x-3">
                                         {product.image && (
-                                            <img 
-                                                src={product.image} 
-                                                alt={product.name} 
-                                                className="w-12 h-12 object-cover rounded-md"
-                                            />
+                                            <div className="relative w-12 h-12 rounded-md overflow-hidden">
+                                                <Image
+                                                    src={product.image}
+                                                    alt={product.name}
+                                                    fill
+                                                    sizes="48px"
+                                                    className="object-cover"
+                                                />
+                                            </div>
                                         )}
                                         <div className="flex-1">
                                             <h3 className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</h3>

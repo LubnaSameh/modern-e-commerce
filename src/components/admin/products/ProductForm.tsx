@@ -9,7 +9,6 @@ import {
     Trash,
     Loader2
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { toast } from "react-toastify";
 
 type ProductFormData = {
@@ -134,7 +133,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
             if (initialData && initialData.id && initialData.id.startsWith('sample-')) {
                 // For sample products, just show a success message
                 toast.success(isEditing ? "Sample product would be updated!" : "Sample product would be created!");
-                
+
                 // Redirect back to products page after 1 second
                 setTimeout(() => {
                     router.push("/admin/products");
@@ -327,7 +326,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                             </select>
                         </div>
                         <p className="mt-1 text-sm text-blue-600 dark:text-blue-400 font-medium">
-                            مهم جداً: يجب اختيار فئة للمنتج حتى يظهر في قسم "You may also like" مع المنتجات المشابهة
+                            مهم جداً: يجب اختيار فئة للمنتج حتى يظهر في قسم &quot;You may also like&quot; مع المنتجات المشابهة
                         </p>
                     </div>
                 </div>

@@ -4,10 +4,26 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import db from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import type { NextAuthOptions } from "next-auth";
+// import type { NextAuthOptions } from "next-auth";
+import type { AuthOptions } from "next-auth";
+import { Session } from "next-auth";
 
-// Define providers array
-const providers: any[] = [
+// تعريف واجهة ممتدة لنوع المستخدم
+interface ExtendedUser {
+    id?: string;
+    role?: string;
+    name?: string;
+    email?: string;
+    image?: string;
+}
+
+// تعريف واجهة ممتدة للجلسة
+interface ExtendedSession extends Session {
+    user: ExtendedUser;
+}
+
+// Define providers array with proper type
+const providers: AuthOptions["providers"] = [
     CredentialsProvider({
         name: "Credentials",
         credentials: {
@@ -108,13 +124,15 @@ const handler = NextAuth({
             console.log("Session callback called", { sessionExists: !!session, tokenId: token?.id });
 
             if (session.user && token) {
-                (session.user as any).id = token.id;
-                (session.user as any).role = token.role;
+                const extendedSession = session as ExtendedSession;
+                extendedSession.user.id = token.id as string;
+                extendedSession.user.role = token.role as string;
                 // Make sure name and email are copied over
-                session.user.name = token.name as string;
-                session.user.email = token.email as string;
-                console.log("Session updated with token data", { id: token.id, role: token.role, name: token.name, email: token.email });
+                extendedSession.user.name = token.name as string;
+                extendedSession.user.email = token.email as string;
+                return extendedSession;
             }
+
             return session;
         },
         async redirect({ url, baseUrl }) {

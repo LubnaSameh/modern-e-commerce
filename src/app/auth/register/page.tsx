@@ -6,13 +6,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { toast } from 'react-toastify';
-import { useTheme } from 'next-themes';
 
 export default function RegisterPage() {
     // State variables for form fields and UI state
     // متغيرات الحالة لحقول النموذج وحالة واجهة المستخدم 
     const router = useRouter();
-    const { theme } = useTheme();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -84,33 +82,46 @@ export default function RegisterPage() {
 
             console.log("Registration successful:", response.data);
             toast.success('Registration successful! Please log in with your credentials.');
-            
+
             // Redirect to login page after successful registration
             setTimeout(() => {
                 router.push('/auth/login');
             }, 1000);
-            
-        } catch (err: any) {
+
+        } catch (err: unknown) {
             console.error("Registration error:", err);
-            console.error("Full error object:", JSON.stringify(err, null, 2));
+
+            // Define a more specific type structure for the error
+            interface ApiError {
+                response?: {
+                    data?: {
+                        error?: string;
+                    };
+                    status?: number;
+                };
+                message?: string;
+            }
+
+            const error = err as ApiError;
+            console.error("Full error object:", JSON.stringify(error, null, 2));
 
             // Display more detailed error messages
             let errorMessage = 'An error occurred during registration. Please try again.';
 
-            if (err.response?.data?.error) {
-                errorMessage = err.response.data.error;
+            if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
 
                 // Include details if available
-                if (err.response.data.details) {
-                    console.error("Error details from server:", err.response.data.details);
-                    errorMessage += ` (${err.response.data.details})`;
+                if (error.response.data.details) {
+                    console.error("Error details from server:", error.response.data.details);
+                    errorMessage += ` (${error.response.data.details})`;
                 }
-            } else if (err.message) {
-                errorMessage = err.message;
+            } else if (error.message) {
+                errorMessage = error.message;
             }
 
             // Special handling for network errors
-            if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+            if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
                 errorMessage = 'The request timed out. Please check your connection and try again.';
             }
 

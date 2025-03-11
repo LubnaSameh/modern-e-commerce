@@ -6,11 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "seed": "ts-node prisma/seed.ts"
+    "lint": "eslint . --ignore-pattern=\".next/\"",
+    "lint:src": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix --ignore-pattern=\".next/\"",
+    "lint:fix:src": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "seed": "ts-node prisma/seed.ts",
+    "prepare": "husky"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
@@ -64,6 +73,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   }

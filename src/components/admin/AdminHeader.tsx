@@ -10,7 +10,6 @@ import {
     User,
     Moon,
     Sun,
-    X,
     Search,
 } from "lucide-react";
 

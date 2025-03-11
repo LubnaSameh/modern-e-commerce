@@ -69,7 +69,7 @@ export default function TestimonialSection() {
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">What Our Customers Say</h2>
                     <p className="text-gray-600 dark:text-gray-300 mt-3 max-w-2xl mx-auto">
-                        We value customer feedback and strive to deliver the best shopping experience. Here's what some of our satisfied customers have to say.
+                        We value customer feedback and strive to deliver the best shopping experience. Here&apos;s what some of our satisfied customers have to say.
                     </p>
                 </div>
 
@@ -96,7 +96,7 @@ export default function TestimonialSection() {
                                                 <Quote className="h-10 w-10 text-blue-500 dark:text-blue-400 opacity-50" />
 
                                                 <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed italic">
-                                                    "{testimonial.text}"
+                                                    &quot;{testimonial.text}&quot;
                                                 </p>
 
                                                 <div className="flex items-center gap-1">

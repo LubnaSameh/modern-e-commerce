@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +7,7 @@ async function main() {
 
     // Instead of deleting existing data, we'll update or create new categories
     // This avoids foreign key constraint issues with products referencing categories
-    
+
     // Create categories
     const categories = [
         {
@@ -72,7 +72,7 @@ async function main() {
 
         if (oldCategory) {
             console.log(`Updating products from category '${oldName}' to '${newName}'`);
-            
+
             // Find the new category
             const newCategory = await prisma.category.findUnique({
                 where: { name: newName }
@@ -84,7 +84,7 @@ async function main() {
                     where: { categoryId: oldCategory.id },
                     data: { categoryId: newCategory.id }
                 });
-                
+
                 // Delete the old category after moving all products
                 await prisma.category.delete({
                     where: { id: oldCategory.id }

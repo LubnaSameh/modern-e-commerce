@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import daisyui from "daisyui";
 
 const config = {
     darkMode: ["class", "[data-theme='dark']"],
@@ -80,7 +81,7 @@ const config = {
     },
     plugins: [
         tailwindcssAnimate,
-        require("daisyui")
+        daisyui
     ],
     daisyui: {
         themes: ["light", "dark"],

@@ -16,6 +16,18 @@ type Order = {
     date: Date;
 };
 
+// Define interface for API response
+interface OrderApiResponse {
+    id: string;
+    user?: {
+        name?: string;
+        email?: string;
+    };
+    status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELED";
+    total: number;
+    createdAt: string;
+}
+
 const StatusBadge = ({ status }: { status: Order["status"] }) => {
     const statusStyles = {
         PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
@@ -123,7 +135,7 @@ export function RecentOrders() {
                 }
 
                 // Convert API response to our Order format
-                const realOrders = data.map((order: any) => ({
+                const realOrders = data.map((order: OrderApiResponse) => ({
                     id: order.id,
                     customer: {
                         name: order.user?.name || 'Guest',

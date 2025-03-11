@@ -18,34 +18,34 @@ interface Category {
 
 // Color mapping for categories - this stays hardcoded to maintain visual design
 const categoryColors: Record<string, { color: string; darkColor: string }> = {
-    'Electronics': { 
-        color: "from-blue-400 to-indigo-500", 
-        darkColor: "from-blue-600/80 to-indigo-600/80" 
+    'Electronics': {
+        color: "from-blue-400 to-indigo-500",
+        darkColor: "from-blue-600/80 to-indigo-600/80"
     },
-    'Fashion': { 
-        color: "from-pink-400 to-rose-500", 
-        darkColor: "from-pink-600/80 to-rose-600/80" 
+    'Fashion': {
+        color: "from-pink-400 to-rose-500",
+        darkColor: "from-pink-600/80 to-rose-600/80"
     },
-    'Home & Garden': { 
-        color: "from-green-400 to-emerald-500", 
-        darkColor: "from-green-600/80 to-emerald-600/80" 
+    'Home & Garden': {
+        color: "from-green-400 to-emerald-500",
+        darkColor: "from-green-600/80 to-emerald-600/80"
     },
-    'Health & Beauty': { 
-        color: "from-purple-400 to-violet-500", 
-        darkColor: "from-purple-600/80 to-violet-600/80" 
+    'Health & Beauty': {
+        color: "from-purple-400 to-violet-500",
+        darkColor: "from-purple-600/80 to-violet-600/80"
     },
-    'Sports & Outdoors': { 
-        color: "from-amber-400 to-orange-500", 
-        darkColor: "from-amber-600/80 to-orange-600/80" 
+    'Sports & Outdoors': {
+        color: "from-amber-400 to-orange-500",
+        darkColor: "from-amber-600/80 to-orange-600/80"
     },
-    'Books & Media': { 
-        color: "from-teal-400 to-cyan-500", 
-        darkColor: "from-teal-600/80 to-cyan-600/80" 
+    'Books & Media': {
+        color: "from-teal-400 to-cyan-500",
+        darkColor: "from-teal-600/80 to-cyan-600/80"
     },
     // Default color for any new categories
-    'default': { 
-        color: "from-gray-400 to-slate-500", 
-        darkColor: "from-gray-600/80 to-slate-600/80" 
+    'default': {
+        color: "from-gray-400 to-slate-500",
+        darkColor: "from-gray-600/80 to-slate-600/80"
     }
 };
 
@@ -60,11 +60,11 @@ export default function CategorySection() {
             try {
                 setIsLoading(true);
                 const response = await fetch('/api/categories');
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch categories');
                 }
-                
+
                 const data = await response.json();
                 setCategories(data);
             } catch (err) {
@@ -119,7 +119,7 @@ export default function CategorySection() {
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Shop by Category</h2>
                     <p className="text-gray-600 dark:text-gray-300 mt-3 max-w-2xl mx-auto">
-                        Browse our extensive collection of products organized by category to find exactly what you're looking for.
+                        Browse our extensive collection of products organized by category to find exactly what you&apos;re looking for.
                     </p>
                 </div>
 
@@ -127,7 +127,7 @@ export default function CategorySection() {
                     {categories.map((category, index) => {
                         // Get colors based on category name or use default
                         const colorScheme = categoryColors[category.name] || categoryColors.default;
-                        
+
                         return (
                             <motion.div
                                 key={category.id}
@@ -188,7 +188,8 @@ export default function CategorySection() {
                                     </div>
                                 </Link>
                             </motion.div>
-                        )}
+                        )
+                    }
                     )}
                 </div>
             </div>

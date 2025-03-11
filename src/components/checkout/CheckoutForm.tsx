@@ -3,12 +3,25 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
+interface FormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    paymentMethod: string;
+}
+
 interface CheckoutFormProps {
-    onSubmit: (formData: any) => void;
+    onSubmit: (formData: FormData) => void;
 }
 
 export default function CheckoutForm({ onSubmit }: CheckoutFormProps) {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         firstName: "",
         lastName: "",
         email: "",

@@ -81,7 +81,7 @@ const sampleCustomers: Customer[] = [
 export function CustomersTable() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState("All");
-    const [customers, setCustomers] = useState<Customer[]>(sampleCustomers);
+    const [customers] = useState<Customer[]>(sampleCustomers);
 
     // Filter customers based on search term and filter
     const filteredCustomers = customers.filter((customer) => {
@@ -147,8 +147,8 @@ export function CustomersTable() {
                                             document.getElementById("customer-filter-dropdown")?.classList.add("hidden");
                                         }}
                                         className={`block w-full text-left px-4 py-2 text-sm ${filter === option
-                                                ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
-                                                : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+                                            ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
+                                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
                                             }`}
                                         role="menuitem"
                                     >
@@ -219,8 +219,8 @@ export function CustomersTable() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${customer.role === "ADMIN"
-                                                ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
-                                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+                                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
                                             }`}>
                                             {customer.role}
                                         </span>

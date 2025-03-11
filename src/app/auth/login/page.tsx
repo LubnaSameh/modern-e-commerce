@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { useTheme } from 'next-themes';
 
 export default function LoginPage() {
-    const router = useRouter();
-    const { theme } = useTheme();
-    const { data: session, status } = useSession();
+    // const router = useRouter(); // Uncomment if needed in the future
+    // const { theme } = useTheme(); // Uncomment if needed in the future
+    const { data: /* session, */ status } = useSession();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -63,20 +61,20 @@ export default function LoginPage() {
 
         try {
             console.log("Checking if user exists:", email);
-            
+
             // First check if the user exists by making a request to a new API endpoint
             const checkUserResponse = await fetch(`/api/auth/check-user?email=${encodeURIComponent(email)}`);
             const { exists } = await checkUserResponse.json();
-            
+
             if (!exists) {
                 setError('This email is not registered. Please register first before attempting to log in.');
                 toast.error('Account not found. Please register first.');
                 setLoading(false);
                 return;
             }
-            
+
             console.log("User exists, proceeding with login");
-            
+
             const result = await signIn('credentials', {
                 redirect: false,
                 email,
@@ -84,7 +82,7 @@ export default function LoginPage() {
             });
 
             console.log("Login result:", result);
-            
+
             if (result?.error) {
                 console.error("Login error:", result.error);
                 setError('Invalid email or password. Please try again.');
@@ -108,17 +106,17 @@ export default function LoginPage() {
                         // Capitalize first letter for better presentation
                         const formattedName = extractedName.charAt(0).toUpperCase() + extractedName.slice(1);
                         window.localStorage.setItem('user-name', formattedName);
-                        
+
                         // Additional debug to confirm name is set
                         console.log('Saved user name to localStorage:', formattedName);
                     }
-                    
+
                     // Ensure session has time to initialize
                     setTimeout(() => {
                         // Double-check login status before redirect
                         console.log("Login complete, checking final status before redirect");
                         console.log("localStorage login status:", window.localStorage.getItem('user-logged-in'));
-                        
+
                         // Force a hard reload to ensure clean session state and the navbar picks up the changes
                         (window as Window).location.href = `/?reload=${new Date().getTime()}`;
                     }, 1000); // Increased delay to ensure localStorage and session are both set
@@ -266,7 +264,7 @@ export default function LoginPage() {
                         )}
 
                         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-                            Don't have an account?{' '}
+                            Don&apos;t have an account?{' '}
                             <Link href="/auth/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                                 Create an account
                             </Link>

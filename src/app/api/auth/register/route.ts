@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
             console.log("Cart created with ID:", user.cart?.id);
 
             // Don't send password back to client
-            const { password: _, ...userWithoutPassword } = user;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password: _password, ...userWithoutPassword } = user;
 
             return NextResponse.json(
                 {

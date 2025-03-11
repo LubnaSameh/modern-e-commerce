@@ -8,7 +8,7 @@ type CacheEntry<T> = {
 };
 
 class ApiCache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private defaultTTL: number = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   /**
@@ -18,17 +18,17 @@ class ApiCache {
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
-    
+
     // Check if entry has expired
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data as T;
   }
 
@@ -41,7 +41,7 @@ class ApiCache {
   set<T>(key: string, data: T, ttl: number = this.defaultTTL): void {
     const timestamp = Date.now();
     const expiresAt = timestamp + ttl;
-    
+
     this.cache.set(key, {
       data,
       timestamp,
@@ -79,17 +79,17 @@ class ApiCache {
    */
   has(key: string): boolean {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
-    
+
     // Check if entry has expired
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
@@ -106,7 +106,7 @@ class ApiCache {
    */
   cleanExpired(): void {
     const now = Date.now();
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (now > entry.expiresAt) {
         this.cache.delete(key);
@@ -132,25 +132,25 @@ export async function fetchWithCache<T>(
 ): Promise<T> {
   // Create a cache key from URL and options
   const cacheKey = `${url}-${JSON.stringify(options)}`;
-  
+
   // Check if we have a cached response
   const cachedData = apiCache.get<T>(cacheKey);
   if (cachedData) {
     return cachedData;
   }
-  
+
   // If not cached or expired, fetch new data
   const response = await fetch(url, options);
-  
+
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
-  
+
   const data = await response.json();
-  
+
   // Cache the response
   apiCache.set<T>(cacheKey, data, ttl);
-  
+
   return data;
 }
 

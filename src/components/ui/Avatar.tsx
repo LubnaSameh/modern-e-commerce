@@ -11,15 +11,15 @@ interface AvatarProps {
   className?: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ 
-  src, 
-  alt = 'User avatar', 
-  size = 'md', 
-  className = '' 
+const Avatar: React.FC<AvatarProps> = ({
+  src,
+  alt = 'User avatar',
+  size = 'md',
+  className = ''
 }) => {
   const [name, setName] = useState<string>(alt);
-  const [imageSrc, setImageSrc] = useState<string | null>(src || null);
-  
+  const imageSrc = src || null;
+
   // Attempt to get name from localStorage if not provided
   useEffect(() => {
     if ((alt === 'User avatar' || alt === 'User') && typeof window !== 'undefined') {
@@ -53,13 +53,13 @@ const Avatar: React.FC<AvatarProps> = ({
   // If we have a valid src, render an Image
   if (imageSrc) {
     return (
-      <div 
+      <div
         className={`relative rounded-full overflow-hidden ${sizeClasses[size]} ${className}`}
       >
-        <Image 
-          src={imageSrc} 
-          alt={name} 
-          fill 
+        <Image
+          src={imageSrc}
+          alt={name}
+          fill
           className="object-cover"
           sizes={`(max-width: 768px) ${size === 'sm' ? '32px' : size === 'md' ? '40px' : '48px'}`}
         />
@@ -70,7 +70,7 @@ const Avatar: React.FC<AvatarProps> = ({
   // If we have initials, render them
   if (initials) {
     return (
-      <div 
+      <div
         className={`flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-medium ${sizeClasses[size]} ${className}`}
       >
         <span className={`${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base'}`}>
@@ -82,7 +82,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
   // Fallback to user icon
   return (
-    <div 
+    <div
       className={`flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 ${sizeClasses[size]} ${className}`}
     >
       <User size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} />

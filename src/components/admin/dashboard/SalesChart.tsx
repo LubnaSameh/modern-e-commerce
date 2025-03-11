@@ -9,8 +9,10 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    TooltipProps
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 // Fixed sample data for the chart
 const monthlyData = [
@@ -38,13 +40,15 @@ const weeklyData = [
     { name: "Sun", revenue: 1900, orders: 16 },
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+type CustomTooltipProps = TooltipProps<ValueType, NameType>;
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white dark:bg-gray-800 p-3 shadow-md rounded border border-gray-200 dark:border-gray-700">
                 <p className="font-medium text-gray-900 dark:text-white">{label}</p>
                 <p className="text-sm text-green-600">
-                    {`Revenue: ${formatCurrency(payload[0].value)}`}
+                    {`Revenue: ${formatCurrency(payload[0].value as number)}`}
                 </p>
                 <p className="text-sm text-blue-600">
                     {`Orders: ${payload[1].value}`}
@@ -60,7 +64,6 @@ type TimeRange = "weekly" | "monthly";
 
 export function SalesChart() {
     const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
-    const [isLoading, setIsLoading] = useState(false);
 
     // State for the note that this is just sample data
     const [showNote, setShowNote] = useState(true);

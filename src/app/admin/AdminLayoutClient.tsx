@@ -13,7 +13,7 @@ export default function AdminLayoutClient({
     children: React.ReactNode;
 }) {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const { status } = useSession();
+    useSession();
     const [isClient, setIsClient] = useState(false);
 
     // Set isClient to true when component mounts (to avoid hydration issues)
