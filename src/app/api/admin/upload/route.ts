@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 // إزالة الـ imports غير المستخدمة
 // import { getServerSession } from "next-auth";
 // import { authOptions } from "@/lib/auth";
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from "uuid";
-import fs from 'fs';
 
 export async function POST(request: Request) {
     try {
@@ -47,33 +45,32 @@ export async function POST(request: Request) {
             );
         }
 
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
         // Create unique filename
         const fileExtension = file.name.split(".").pop();
         const fileName = `${uuidv4()}.${fileExtension}`;
 
-        // Save to public/uploads directory
-        const uploadDir = join(process.cwd(), "public", "uploads");
+        try {
+            // Upload to Vercel Blob Storage
+            const blob = await put(fileName, file, {
+                access: 'public',
+            });
 
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+            console.log('Successfully uploaded to Blob Storage:', blob.url);
+
+            // Return the URL to the uploaded file
+            return NextResponse.json({ url: blob.url });
+
+        } catch (blobError) {
+            console.error("Error uploading to Blob Storage:", blobError);
+            return NextResponse.json(
+                { error: "Error uploading to Blob Storage", details: blobError instanceof Error ? blobError.message : 'Unknown error' },
+                { status: 500 }
+            );
         }
-
-        const filePath = join(uploadDir, fileName);
-
-        await writeFile(filePath, buffer);
-
-        // Return the URL to the uploaded file
-        const url = `/uploads/${fileName}`;
-
-        return NextResponse.json({ url });
     } catch (error) {
-        console.error("Error uploading file:", error);
+        console.error("Error processing upload:", error);
         return NextResponse.json(
-            { error: "Error uploading file" },
+            { error: "Error processing upload", details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
         );
     }
