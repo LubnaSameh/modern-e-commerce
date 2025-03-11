@@ -171,8 +171,8 @@ export default function FeaturedProducts() {
     }, []);
 
     return (
-        <section className="py-8 sm:py-12 md:py-16 bg-white dark:bg-gray-900">
-            <div className="mx-auto container sm:px-4">
+        <section className="py-8 sm:py-12 md:py-16 bg-white lg:px-7 dark:bg-gray-900">
+            <div className="mx-auto container sm:px-4 ">
                 <div className="text-center mb-8 sm:mb-12">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                         Featured Products

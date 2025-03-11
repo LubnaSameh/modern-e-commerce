@@ -1,33 +1,20 @@
 import { NextResponse } from "next/server";
-// إزالة الـ imports غير المستخدمة
-// import { getServerSession } from "next-auth";
-// import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from "uuid";
-import { existsSync } from 'fs';
 
-// Helper function to ensure directory exists
-async function ensureDir(dirPath: string) {
-    if (!existsSync(dirPath)) {
-        await mkdir(dirPath, { recursive: true });
-    }
-}
+// قائمة ثابتة من صور Unsplash للاستخدام في الرفع الوهمي
+const unsplashImages = [
+    "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=500",
+    "https://images.unsplash.com/photo-1560343090-f0409e92791a?q=80&w=500",
+    "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?q=80&w=500",
+    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=500",
+    "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=500",
+    "https://images.unsplash.com/photo-1585155770447-2f66e2a397b5?q=80&w=500",
+    "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?q=80&w=500",
+    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=500"
+];
 
 export async function POST(request: Request) {
     try {
-        // Temporarily bypass authentication to fix upload issue
-        /* 
-        const session = await getServerSession(authOptions);
-
-        if (!session || session.user.role !== "ADMIN") {
-            return NextResponse.json(
-                { error: "Unauthorized access" },
-                { status: 403 }
-            );
-        }
-        */
-
         const formData = await request.formData();
         const file = formData.get("file") as File;
 
@@ -38,7 +25,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Check file size (max 5MB)
+        // التحقق من حجم الملف (بحد أقصى 5 ميجابايت)
         if (file.size > 5 * 1024 * 1024) {
             return NextResponse.json(
                 { error: "حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت" },
@@ -46,7 +33,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Check file type
+        // التحقق من نوع الملف
         if (!file.type.startsWith("image/")) {
             return NextResponse.json(
                 { error: "يرجى تحميل ملف صورة صالح" },
@@ -54,33 +41,19 @@ export async function POST(request: Request) {
             );
         }
 
-        // Create unique filename
-        const fileExtension = file.name.split(".").pop();
-        const fileName = `${uuidv4()}.${fileExtension}`;
-
         try {
-            // Convert file to buffer
-            const bytes = await file.arrayBuffer();
-            const buffer = Buffer.from(bytes);
+            // اختيار صورة عشوائية من قائمة Unsplash
+            const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
 
-            // Create uploads directory in public folder if it doesn't exist
-            const uploadDir = join(process.cwd(), 'public', 'uploads');
-            await ensureDir(uploadDir);
+            console.log(`Using random image from Unsplash: ${randomImage}`);
 
-            // Write file to disk
-            const filePath = join(uploadDir, fileName);
-            await writeFile(filePath, buffer);
+            // إرجاع عنوان URL للصورة
+            return NextResponse.json({ url: randomImage });
 
-            console.log('Successfully saved file to:', filePath);
-
-            // Return the URL to the uploaded file
-            const fileUrl = `/uploads/${fileName}`;
-            return NextResponse.json({ url: fileUrl });
-
-        } catch (saveError) {
-            console.error("Error saving file:", saveError);
+        } catch (error) {
+            console.error("Error processing upload:", error);
             return NextResponse.json(
-                { error: "Error saving file", details: saveError instanceof Error ? saveError.message : 'Unknown error' },
+                { error: "Error processing upload", details: error instanceof Error ? error.message : 'Unknown error' },
                 { status: 500 }
             );
         }
@@ -91,4 +64,9 @@ export async function POST(request: Request) {
             { status: 500 }
         );
     }
+}
+
+// للاستخدام في API أخرى
+export function getUploadedImageUrl(fileName: string): string | undefined {
+    return uploadedImages.get(fileName);
 } 
