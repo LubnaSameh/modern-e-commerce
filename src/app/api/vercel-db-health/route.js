@@ -116,94 +116,10 @@ export async function GET() {
                 message: error.message,
                 stack: error.stack
             });
-
-            // Don't throw here, continue with direct test
-        }
-
-        // Step 2: Try a direct connection as fallback if the first one failed
-        if (!results.success) {
-            console.log("Step 2: Attempting direct MongoDB connection");
-
-            try {
-                const uri = process.env.MONGODB_ATLAS_URI || process.env.MONGODB_URI;
-                const dbName = process.env.MONGODB_DB_NAME || 'e-commerce';
-
-                if (!uri) {
-                    throw new Error("MongoDB connection string is missing");
-                }
-
-                // Connection options optimized for Vercel
-                const options = {
-                    serverSelectionTimeoutMS: 90000,
-                    connectTimeoutMS: 90000,
-                    socketTimeoutMS: 90000,
-                    maxPoolSize: 5,
-                    minPoolSize: 0,
-                    ssl: true,
-                    retryWrites: true,
-                    w: 'majority',
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true
-                };
-
-                const directStart = Date.now();
-                const client = await MongoClient.connect(uri, options);
-                const db = client.db(dbName);
-                const directTime = Date.now() - directStart;
-
-                results.connectionTests.push({
-                    name: "Direct connection",
-                    success: true,
-                    time: `${directTime}ms`
-                });
-
-                // Only gather this info if we don't have it yet
-                if (!results.dbDetails.name) {
-                    const collections = await db.listCollections().toArray();
-                    const collectionNames = collections.map(c => c.name);
-
-                    results.dbDetails = {
-                        name: db.databaseName,
-                        collections: collectionNames,
-                        totalCollections: collectionNames.length
-                    };
-                }
-
-                await client.close();
-                console.log(`✅ Direct connection successful in ${directTime}ms`);
-
-                // If we got here, at least this connection worked
-                results.success = true;
-
-            } catch (error) {
-                console.error("❌ Direct connection test also failed:", error);
-
-                results.connectionTests.push({
-                    name: "Direct connection",
-                    success: false,
-                    error: error.message
-                });
-
-                results.errors.push({
-                    phase: "Direct connection",
-                    type: error.name,
-                    message: error.message,
-                    stack: error.stack
-                });
-            }
         }
 
         // Calculate total time
         results.totalTime = `${Date.now() - startTime}ms`;
-
-        // Add diagnostic info
-        results.diagnostics = {
-            connectionString: process.env.MONGODB_URI ?
-                `${process.env.MONGODB_URI.substring(0, 20)}...` :
-                'Not available',
-            ipAddress: await getIpAddress(),
-            timestamp: new Date().toISOString()
-        };
 
         return NextResponse.json(results);
 
