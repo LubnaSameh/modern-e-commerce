@@ -170,10 +170,32 @@ export async function connectToDatabase() {
 // Helper function to access collections
 export async function getCollection(collectionName) {
     try {
+        console.log(`🔍 Attempting to get collection: ${collectionName}`);
+
+        const startTime = Date.now();
         const { db } = await connectToDatabase();
+        const endTime = Date.now();
+
+        console.log(`✅ Successfully accessed collection ${collectionName} in ${endTime - startTime}ms`);
         return db.collection(collectionName);
     } catch (error) {
+        // Enhanced error reporting for Vercel
         console.error(`❌ Error accessing collection ${collectionName}:`, error);
+        console.error(`💡 Collection Error Details - Type: ${error.name}, Message: ${error.message}`);
+
+        if (isVercel) {
+            console.error(`
+            🔴 Vercel Collection Access Error:
+            - Collection: ${collectionName}
+            - Error Type: ${error.name}
+            - Error Message: ${error.message}
+            - Stack: ${error.stack}
+            - Environment: ${process.env.VERCEL_ENV || 'Unknown'}
+            - Region: ${process.env.VERCEL_REGION || 'Unknown'}
+            - IP Whitelist: Check if 0.0.0.0/0 is allowed in MongoDB Atlas
+            `);
+        }
+
         throw new Error(`Database connection failed: ${error.message}`);
     }
 }

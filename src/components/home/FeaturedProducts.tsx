@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import { fetchWithCache } from "@/lib/api-cache";
 import { useSlowConnection } from "@/lib/performance";
 import { useKeepAlive } from "@/lib/keep-alive";
@@ -57,9 +56,6 @@ export default function FeaturedProducts() {
     const [error, setError] = useState<string | null>(null);
     const [connectionAttempts, setConnectionAttempts] = useState(0);
     const INITIAL_DISPLAY_COUNT = 8;
-
-    // Check if user is on a slow connection
-    const isSlowConnection = useSlowConnection();
 
     // Initialize keep-alive mechanism
     useKeepAlive();
@@ -189,7 +185,7 @@ export default function FeaturedProducts() {
         } finally {
             setLoading(false);
         }
-    }, [connectionAttempts, isSlowConnection]);
+    }, [connectionAttempts]);
 
     // Initial fetch on component mount
     useEffect(() => {
@@ -284,8 +280,8 @@ export default function FeaturedProducts() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{
-                                        duration: isSlowConnection ? 0 : 0.3,
-                                        delay: isSlowConnection ? 0 : index * 0.1
+                                        duration: 0.3,
+                                        delay: index * 0.1
                                     }}
                                 >
                                     <ProductCard

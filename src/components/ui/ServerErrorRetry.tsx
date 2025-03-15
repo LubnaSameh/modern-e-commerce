@@ -23,30 +23,7 @@ export default function ServerErrorRetry({
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
     const [countdown, setCountdown] = useState(retryDelay);
-    const [retryTimer, setRetryTimer] = useState<NodeJS.Timeout | null>(null);
     const [errorDetails, setErrorDetails] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (autoRetry && retryCount < maxRetries) {
-            // Start countdown
-            const timer = setInterval(() => {
-                setCountdown(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        handleRetry();
-                        return retryDelay;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-
-            setRetryTimer(timer);
-
-            return () => {
-                if (timer) clearInterval(timer);
-            };
-        }
-    }, [retryCount, autoRetry, maxRetries, retryDelay]);
 
     const handleRetry = async () => {
         if (isRetrying) return;
@@ -67,6 +44,26 @@ export default function ServerErrorRetry({
             setIsRetrying(false);
         }
     };
+
+    useEffect(() => {
+        if (autoRetry && retryCount < maxRetries) {
+            // Start countdown
+            const timer = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        handleRetry();
+                        return retryDelay;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => {
+                if (timer) clearInterval(timer);
+            };
+        }
+    }, [retryCount, autoRetry, maxRetries, retryDelay, handleRetry]);
 
     const progressPercentage = ((retryDelay - countdown) / retryDelay) * 100;
 
