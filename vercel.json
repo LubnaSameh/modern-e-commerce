@@ -14,9 +14,10 @@
         "CLOUDINARY_API_KEY": "274818539713398",
         "CLOUDINARY_API_SECRET": "V6tZhUZeIQZG5KJbVBl12VweFa0",
         "NEXTAUTH_SECRET": "zRNIhHHvzA6YehTvL4MrNj8vYpLhQMPCHy4qvjGTMnO+DcfDCB3m+Xg7VfZAQdsL",
-        "NEXTAUTH_URL": "https://e-commerce-ixaywr9co-lubna-sameh-mohameds-projects.vercel.app",
+        "NEXTAUTH_URL": "https://e-commerce-lubnasameh-lubna-sameh-mohameds-projects.vercel.app",
         "NEXTAUTH_DEBUG": "true",
         "NODE_ENV": "production",
-        "BLOB_READ_WRITE_TOKEN": "vercel_blob_rw_eFCwKA6cDkdQMZ1A_ANBbXsZPMWQh03OOB4iCXxJqcBXMCrt"
+        "BLOB_READ_WRITE_TOKEN": "vercel_blob_rw_eFCwKA6cDkdQMZ1A_ANBbXsZPMWQh03OOB4iCXxJqcBXMCrt",
+        "NEXT_PUBLIC_SITE_URL": "https://e-commerce-lubnasameh-lubna-sameh-mohameds-projects.vercel.app"
     }
 }

@@ -47,6 +47,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.lubna-sameh-mohameds-projects.vercel.app',
+        pathname: '/**',
       }
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -96,12 +101,24 @@ const nextConfig = {
         ],
       },
       {
-        // Apply different caching for dynamic content
+        // Apply different caching for dynamic content and add CORS headers for API routes
         source: '/api/(.*)',
         headers: [
           {
             key: 'Cache-Control',
             value: 'no-cache, no-store, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'X-Requested-With, Content-Type, Authorization',
           },
         ],
       },

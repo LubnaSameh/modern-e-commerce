@@ -7,7 +7,7 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 const SITE_URL = isDevelopment
     ? 'http://localhost:3003' // استخدم localhost في بيئة التطوير
-    : process.env.NEXT_PUBLIC_SITE_URL || 'https://e-commerce-k52dxr154-lubna-sameh-mohameds-projects.vercel.app';
+    : process.env.NEXT_PUBLIC_SITE_URL || 'https://e-commerce-lubnasameh-lubna-sameh-mohameds-projects.vercel.app';
 
 /**
  * وظيفة تقوم بإرسال طلب ping للحفاظ على استمرارية تشغيل API
@@ -47,7 +47,8 @@ export async function sendKeepAlivePing() {
             signal: controller.signal,
             priority: 'low' as any,
             cache: 'no-store',
-            mode: 'cors' // تحديد وضع CORS بوضوح
+            mode: 'cors', // تحديد وضع CORS بوضوح
+            credentials: 'same-origin' // إضافة خيار الاعتماد لحل مشاكل الاستيثاق
         });
 
         clearTimeout(timeoutId);

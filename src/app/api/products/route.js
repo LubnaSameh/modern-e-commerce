@@ -50,6 +50,29 @@ function normalizeProduct(product) {
     };
 }
 
+// دعم طريقة HEAD للـ keep-alive
+export async function HEAD(request) {
+    // ببساطة ترجع استجابة فارغة بحالة 200 OK
+    return new NextResponse(null, {
+        status: 200, headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+    });
+}
+
+// دعم طريقة OPTIONS للـ CORS
+export async function OPTIONS(request) {
+    return new NextResponse(null, {
+        status: 200, headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+    });
+}
+
 // الحصول على كل المنتجات أو البحث بينهم
 export async function GET(request) {
     try {
@@ -58,6 +81,18 @@ export async function GET(request) {
         const query = searchParams.get('q');
         const categoryId = searchParams.get('category');
         const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')) : null;
+
+        // إذا كان هذا طلب keepAlive، أرجع استجابة فارغة بحالة 200
+        const keepAlive = searchParams.get('keepAlive');
+        if (keepAlive === 'true') {
+            return new NextResponse(null, {
+                status: 200, headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                }
+            });
+        }
 
         let products;
 
@@ -84,12 +119,25 @@ export async function GET(request) {
             normalizedProducts = normalizedProducts.slice(0, limit);
         }
 
-        return NextResponse.json({ products: normalizedProducts });
+        return NextResponse.json({ products: normalizedProducts }, {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            }
+        });
     } catch (error) {
         console.error('Error fetching products:', error);
         return NextResponse.json(
             { error: 'حدث خطأ أثناء الحصول على المنتجات', details: error.message },
-            { status: 500 }
+            {
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                }
+            }
         );
     }
 }
@@ -103,7 +151,14 @@ export async function POST(request) {
         if (!productData.name || !productData.price) {
             return NextResponse.json(
                 { error: 'اسم المنتج والسعر مطلوبان' },
-                { status: 400 }
+                {
+                    status: 400,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                    }
+                }
             );
         }
 
@@ -112,13 +167,27 @@ export async function POST(request) {
 
         return NextResponse.json(
             { message: 'تم إنشاء المنتج بنجاح', product: normalizedProduct },
-            { status: 201 }
+            {
+                status: 201,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                }
+            }
         );
     } catch (error) {
         console.error('Error creating product:', error);
         return NextResponse.json(
             { error: 'حدث خطأ أثناء إنشاء المنتج' },
-            { status: 500 }
+            {
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                }
+            }
         );
     }
 }
