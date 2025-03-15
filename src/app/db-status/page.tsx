@@ -10,6 +10,14 @@ export default function DatabaseStatusPage() {
     const [testResults, setTestResults] = useState<any[]>([]);
     const router = useRouter();
 
+    // Get the base URL for API calls
+    const getBaseUrl = () => {
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+        return '';
+    };
+
     useEffect(() => {
         checkDatabaseStatus();
     }, []);
@@ -19,8 +27,11 @@ export default function DatabaseStatusPage() {
         setError(null);
 
         try {
+            const baseUrl = getBaseUrl();
             console.log('Checking database status...');
-            const response = await fetch('/api/vercel-db-health', {
+            console.log(`Base URL: ${baseUrl}`);
+
+            const response = await fetch(`${baseUrl}/api/vercel-db-health`, {
                 method: 'GET',
                 headers: {
                     'Cache-Control': 'no-cache',
@@ -66,6 +77,13 @@ export default function DatabaseStatusPage() {
         }
     };
 
+    // Fix for Tailwind class interpolation in Vercel
+    const getStatusClasses = (isSuccess: boolean) => {
+        return isSuccess
+            ? "bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6"
+            : "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6";
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-6">Database Connection Status</h1>
@@ -94,10 +112,11 @@ export default function DatabaseStatusPage() {
             )}
 
             {status && (
-                <div className={`bg-${status.success ? 'green' : 'red'}-100 border border-${status.success ? 'green' : 'red'}-400 text-${status.success ? 'green' : 'red'}-700 px-4 py-3 rounded mb-6`}>
+                <div className={getStatusClasses(status.success)}>
                     <h2 className="text-xl font-bold">Current Status: {status.success ? 'Connected' : 'Failed'}</h2>
                     <p><strong>Time:</strong> {formatDate(status.timestamp)}</p>
                     <p><strong>Total Time:</strong> {status.totalTime}</p>
+                    {status.version && <p><strong>Version:</strong> {status.version}</p>}
 
                     {status.environment && (
                         <div className="mt-4">
@@ -133,7 +152,7 @@ export default function DatabaseStatusPage() {
                             <h3 className="font-bold">Connection Tests:</h3>
                             <ul className="list-disc list-inside">
                                 {status.connectionTests.map((test: any, i: number) => (
-                                    <li key={i} className={test.success ? 'text-green-600' : 'text-red-600'}>
+                                    <li key={i} className={test.success ? "text-green-600" : "text-red-600"}>
                                         {test.name}: {test.success ? 'Success' : 'Failed'}
                                         {test.time && ` (${test.time})`}
                                         {test.error && ` - ${test.error}`}
@@ -170,7 +189,7 @@ export default function DatabaseStatusPage() {
                 ) : (
                     <ul className="space-y-4">
                         {testResults.map((result, i) => (
-                            <li key={i} className={`border rounded p-4 ${result.success ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                            <li key={i} className={result.success ? "border rounded p-4 border-green-300 bg-green-50" : "border rounded p-4 border-red-300 bg-red-50"}>
                                 <p><strong>Time:</strong> {formatDate(result.timestamp)}</p>
                                 <p><strong>Status:</strong> {result.success ? 'Success' : 'Failed'}</p>
                                 {result.totalTime && <p><strong>Duration:</strong> {result.totalTime}</p>}
