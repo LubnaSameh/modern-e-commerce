@@ -38,7 +38,7 @@ export async function GET() {
 
         try {
             const connectionStart = Date.now();
-            const { client, db } = await connectToDatabase();
+            const { db } = await connectToDatabase();
             const connectionTime = Date.now() - connectionStart;
 
             results.connectionTests.push({

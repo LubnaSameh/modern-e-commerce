@@ -1,3 +1,7 @@
+'use client';
+
+import Link from 'next/link';
+
 export default function HomePage() {
     return (
         <div className="min-h-screen bg-gray-50">
@@ -20,19 +24,19 @@ export default function HomePage() {
                                 <h3 className="text-xl font-semibold mb-3">روابط المتجر</h3>
                                 <ul className="space-y-2">
                                     <li>
-                                        <a href="/products" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                        <Link href="/products" className="text-blue-600 hover:text-blue-800 hover:underline">
                                             تصفح المنتجات
-                                        </a>
+                                        </Link>
                                     </li>
                                     <li>
-                                        <a href="/categories" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                        <Link href="/categories" className="text-blue-600 hover:text-blue-800 hover:underline">
                                             التصنيفات
-                                        </a>
+                                        </Link>
                                     </li>
                                     <li>
-                                        <a href="/cart" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                        <Link href="/cart" className="text-blue-600 hover:text-blue-800 hover:underline">
                                             سلة التسوق
-                                        </a>
+                                        </Link>
                                     </li>
                                 </ul>
                             </div>
@@ -41,14 +45,14 @@ export default function HomePage() {
                                 <h3 className="text-xl font-semibold mb-3">أدوات التشخيص</h3>
                                 <ul className="space-y-2">
                                     <li>
-                                        <a href="/db-status" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                        <Link href="/db-status" className="text-blue-600 hover:text-blue-800 hover:underline">
                                             حالة قاعدة البيانات
-                                        </a>
+                                        </Link>
                                     </li>
                                     <li>
-                                        <a href="/test-connection" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                        <Link href="/test-connection" className="text-blue-600 hover:text-blue-800 hover:underline">
                                             اختبار اتصال MongoDB
-                                        </a>
+                                        </Link>
                                     </li>
                                 </ul>
                             </div>

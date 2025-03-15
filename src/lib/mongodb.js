@@ -98,13 +98,4 @@ export async function getCollection(collectionName) {
         console.error(`❌ Error accessing collection ${collectionName}:`, error);
         throw new Error(`Database connection failed: ${error.message}`);
     }
-}
-
-// Helper function to get current IP address
-async function getIpAddress() {
-    try {
-        return "Check your current IP address";
-    } catch (error) {
-        return "Unknown";
-    }
 } 
