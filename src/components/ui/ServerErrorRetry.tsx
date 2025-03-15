@@ -8,7 +8,6 @@ interface ServerErrorRetryProps {
     onRetry?: () => Promise<boolean | void> | boolean | void;
     autoRetry?: boolean;
     maxRetries?: number;
-    retryDelay?: number;
 }
 
 const DEFAULT_MESSAGE = 'We encountered a problem connecting to the server, attempting to reconnect...';
@@ -17,33 +16,12 @@ export default function ServerErrorRetry({
     message = DEFAULT_MESSAGE,
     onRetry,
     autoRetry = true,
-    maxRetries = 5,
-    retryDelay = 5
+    maxRetries = 3
 }: ServerErrorRetryProps) {
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
-    const [countdown, setCountdown] = useState(retryDelay);
-    const [errorDetails, setErrorDetails] = useState<string | null>(null);
-
-    const handleRetry = async () => {
-        if (isRetrying) return;
-
-        setIsRetrying(true);
-        setErrorDetails(null);
-
-        try {
-            if (onRetry) {
-                await onRetry();
-            }
-            // If retry is successful, content will load and this component won't be shown
-        } catch (err) {
-            console.error('Retry failed:', err);
-            setRetryCount(prev => prev + 1);
-            setErrorDetails(err instanceof Error ? err.message : String(err));
-        } finally {
-            setIsRetrying(false);
-        }
-    };
+    const [countdown, setCountdown] = useState(5);
+    const [retryTimer, setRetryTimer] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (autoRetry && retryCount < maxRetries) {
@@ -53,19 +31,39 @@ export default function ServerErrorRetry({
                     if (prev <= 1) {
                         clearInterval(timer);
                         handleRetry();
-                        return retryDelay;
+                        return 5; // Reset countdown
                     }
                     return prev - 1;
                 });
             }, 1000);
 
+            setRetryTimer(timer);
+
             return () => {
                 if (timer) clearInterval(timer);
             };
         }
-    }, [retryCount, autoRetry, maxRetries, retryDelay, handleRetry]);
+    }, [retryCount, autoRetry, maxRetries]);
 
-    const progressPercentage = ((retryDelay - countdown) / retryDelay) * 100;
+    const handleRetry = async () => {
+        if (isRetrying) return;
+
+        setIsRetrying(true);
+
+        try {
+            if (onRetry) {
+                await onRetry();
+            }
+            // If retry is successful, content will load and this component won't be shown
+        } catch (err) {
+            console.error('Retry failed:', err);
+            setRetryCount(prev => prev + 1);
+        } finally {
+            setIsRetrying(false);
+        }
+    };
+
+    const progressPercentage = ((5 - countdown) / 5) * 100;
 
     return (
         <div className="flex flex-col items-center justify-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md max-w-lg mx-auto my-8">
@@ -79,13 +77,6 @@ export default function ServerErrorRetry({
                 {message}
             </p>
 
-            {errorDetails && (
-                <div className="text-xs text-red-500 dark:text-red-400 mb-4 p-2 bg-red-50 dark:bg-red-900/20 rounded max-w-full overflow-auto">
-                    <p className="font-semibold">Error details:</p>
-                    <p className="break-words">{errorDetails}</p>
-                </div>
-            )}
-
             {autoRetry && retryCount < maxRetries ? (
                 <div className="w-full max-w-xs">
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -98,10 +89,6 @@ export default function ServerErrorRetry({
                             className="bg-primary h-full transition-all duration-1000 ease-linear"
                             style={{ width: `${progressPercentage}%` }}
                         />
-                    </div>
-
-                    <div className="text-xs text-gray-500 mt-2 text-center">
-                        Attempt {retryCount + 1} of {maxRetries}
                     </div>
                 </div>
             ) : (
@@ -126,17 +113,10 @@ export default function ServerErrorRetry({
                 ) : (
                     <>
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Retry Now
+                        Retry
                     </>
                 )}
             </button>
-
-            {retryCount >= maxRetries && (
-                <p className="text-xs text-gray-500 mt-4">
-                    Try refreshing the page or check your internet connection.
-                    If the problem persists, the server might be temporarily unavailable.
-                </p>
-            )}
         </div>
     );
 } 

@@ -3,19 +3,6 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-    // Public endpoints that should bypass authentication
-    const publicEndpoints = [
-        '/api/public-db-test',
-        '/api/test-db-connection',
-        '/api/vercel-db-test'
-    ];
-
-    // Skip middleware for public endpoints
-    if (publicEndpoints.some(endpoint => request.nextUrl.pathname.startsWith(endpoint))) {
-        console.log('MIDDLEWARE: Bypassing auth for public endpoint', request.nextUrl.pathname);
-        return NextResponse.next();
-    }
-
     // Get token with explicit secret to ensure it works
     const token = await getToken({
         req: request,
@@ -112,7 +99,7 @@ export const config = {
         '/profile/:path*',
         // كل مسارات API
         '/api/:path*',
-        // استثناء مسارات API معينة
-        '/((?!api/public-db-test|api/test-db-connection|api/vercel-db-test).*)',
+        // استثناء مسارات API معينة إذا لزم الأمر
+        // '/((?!api/excluded-route).*)',
     ],
 }; 

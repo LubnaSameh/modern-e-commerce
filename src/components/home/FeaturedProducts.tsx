@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { fetchWithCache } from "@/lib/api-cache";
 import { useSlowConnection } from "@/lib/performance";
 import { useKeepAlive } from "@/lib/keep-alive";
@@ -54,8 +55,10 @@ export default function FeaturedProducts() {
     const [products, setProducts] = useState<Product[]>(sampleProducts);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [connectionAttempts, setConnectionAttempts] = useState(0);
     const INITIAL_DISPLAY_COUNT = 8;
+
+    // Check if user is on a slow connection
+    const isSlowConnection = useSlowConnection();
 
     // Initialize keep-alive mechanism
     useKeepAlive();
@@ -66,28 +69,9 @@ export default function FeaturedProducts() {
             setLoading(true);
             setError(null);
 
-            // Increment connection attempt counter
-            setConnectionAttempts(prev => prev + 1);
-            console.log(`Attempting to fetch products (attempt ${connectionAttempts + 1})...`);
-
             // Use the same exact endpoint as the shop page without limit parameter
             // to get all products including ones like 'apple'
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-            const data = await fetchWithCache<ApiResponse>(
-                '/api/products',
-                {
-                    signal: controller.signal,
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                },
-                2 * 60 * 1000 // Reduced cache time to 2 minutes
-            );
-
-            clearTimeout(timeoutId);
+            const data = await fetchWithCache<ApiResponse>('/api/products', {}, 5 * 60 * 1000);
             const apiProducts = data.products || [];
 
             // Convert API products to the correct format for the home page
@@ -146,50 +130,28 @@ export default function FeaturedProducts() {
             } else {
                 // If no API products, use sample products
                 combinedProducts = [...sampleProducts];
-
-                // Only show error if this was a real connection attempt
-                if (connectionAttempts > 0) {
-                    console.warn("No products returned from API, using sample products");
-                    setError('Unable to load real products. Showing samples instead.');
-                }
             }
 
-            // Reset connection attempts on success
-            setConnectionAttempts(0);
             console.log(`FeaturedProducts showing products: ${combinedProducts.map(p => p.name).join(', ')}`);
 
             setProducts(combinedProducts);
             setError(null);
             return true;
         } catch (error) {
-            const errorMessage = error instanceof Error
-                ? error.message
-                : 'An unknown error occurred while fetching products';
-
             console.error('Error fetching products:', error);
-            setError(errorMessage);
-
-            // Log detailed error info
-            console.error(`Product fetch failed (attempt ${connectionAttempts}):`, {
-                message: errorMessage,
-                type: error instanceof Error ? error.name : 'Unknown',
-                stack: error instanceof Error ? error.stack : undefined,
-                abort: error instanceof DOMException && error.name === 'AbortError'
-            });
+            setError(error instanceof Error ? error.message : 'An error occurred');
 
             // On error, still show sample products
             setProducts(sampleProducts);
-
-            // Return false to indicate failure for retry logic
-            return false;
+            throw error; // Rethrow for the error boundary
         } finally {
             setLoading(false);
         }
-    }, [connectionAttempts]);
+    }, []);
 
-    // Initial fetch on component mount
+    // Initial data loading
     useEffect(() => {
-        fetchProducts();
+        fetchProducts().catch(err => console.error("Initial fetch failed:", err));
     }, [fetchProducts]);
 
     // Memoize categories to prevent recalculation on each render
@@ -280,8 +242,8 @@ export default function FeaturedProducts() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{
-                                        duration: 0.3,
-                                        delay: index * 0.1
+                                        duration: isSlowConnection ? 0 : 0.3,
+                                        delay: isSlowConnection ? 0 : index * 0.1
                                     }}
                                 >
                                     <ProductCard
