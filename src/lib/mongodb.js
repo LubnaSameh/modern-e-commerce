@@ -36,6 +36,9 @@ if (!url) {
     throw new Error(errorMessage);
 }
 
+let connectionRetryCount = 0;
+const MAX_RETRY_COUNT = 3;
+
 export async function connectToDatabase() {
     // Return existing connection if available
     if (cachedClient && cachedDb) {
@@ -57,18 +60,21 @@ export async function connectToDatabase() {
 
         // Connection options optimized for Vercel
         const options = {
-            // Core settings
-            serverSelectionTimeoutMS: isVercel ? 60000 : 30000, // Longer timeout for Vercel
-            connectTimeoutMS: isVercel ? 60000 : 30000,
-            socketTimeoutMS: isVercel ? 60000 : 45000,
+            // Core settings - increased timeouts for Vercel
+            serverSelectionTimeoutMS: 90000, // Increased timeout for Vercel
+            connectTimeoutMS: 90000, // Increased from 60000
+            socketTimeoutMS: 90000, // Increased from 60000
             // Connection pool settings - smaller for serverless
-            maxPoolSize: isVercel ? 10 : 50,
-            minPoolSize: isVercel ? 0 : 5,
+            maxPoolSize: isVercel ? 5 : 50, // Reduced pool size for Vercel
+            minPoolSize: 0,
             // SSL settings
             ssl: true,
             // Production-optimized settings
             retryWrites: true,
-            w: 'majority'
+            w: 'majority',
+            // Added for improved reliability
+            useNewUrlParser: true,
+            useUnifiedTopology: true
         };
 
         console.log(`🔌 Connecting with options: ${JSON.stringify(options, null, 2)}`);
@@ -80,10 +86,34 @@ export async function connectToDatabase() {
             console.log(`- VERCEL_REGION: ${process.env.VERCEL_REGION || 'Not set'}`);
         }
 
-        // Connect with optimized options
-        const client = await MongoClient.connect(url, options);
+        // Add connection retry logic
+        let client;
+        try {
+            // Connect with optimized options
+            client = await MongoClient.connect(url, options);
+        } catch (initialError) {
+            console.error('❌ Initial connection attempt failed:', initialError);
+
+            // Try one more time with a direct connection string
+            if (connectionRetryCount < MAX_RETRY_COUNT) {
+                connectionRetryCount++;
+                console.log(`Retrying connection (attempt ${connectionRetryCount}/${MAX_RETRY_COUNT})...`);
+
+                // Short delay before retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Try again with the same options
+                client = await MongoClient.connect(url, options);
+            } else {
+                throw initialError;
+            }
+        }
+
         const db = client.db(dbName);
         console.log(`✅ Connected to database: ${db.databaseName}`);
+
+        // Reset retry count on successful connection
+        connectionRetryCount = 0;
 
         // Cache the connection globally
         cachedClient = client;
@@ -115,6 +145,7 @@ export async function connectToDatabase() {
     - Database Name: ${dbName}
     - Environment: ${isProduction ? 'Production' : 'Development'}
     - Vercel: ${isVercel ? 'Yes' : 'No'}
+    - Retry Count: ${connectionRetryCount}/${MAX_RETRY_COUNT}
     `);
 
         // Specific error handling advice

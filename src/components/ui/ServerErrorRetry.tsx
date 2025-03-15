@@ -8,6 +8,7 @@ interface ServerErrorRetryProps {
     onRetry?: () => Promise<boolean | void> | boolean | void;
     autoRetry?: boolean;
     maxRetries?: number;
+    retryDelay?: number;
 }
 
 const DEFAULT_MESSAGE = 'We encountered a problem connecting to the server, attempting to reconnect...';
@@ -16,12 +17,14 @@ export default function ServerErrorRetry({
     message = DEFAULT_MESSAGE,
     onRetry,
     autoRetry = true,
-    maxRetries = 3
+    maxRetries = 5,
+    retryDelay = 5
 }: ServerErrorRetryProps) {
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
-    const [countdown, setCountdown] = useState(5);
+    const [countdown, setCountdown] = useState(retryDelay);
     const [retryTimer, setRetryTimer] = useState<NodeJS.Timeout | null>(null);
+    const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
     useEffect(() => {
         if (autoRetry && retryCount < maxRetries) {
@@ -31,7 +34,7 @@ export default function ServerErrorRetry({
                     if (prev <= 1) {
                         clearInterval(timer);
                         handleRetry();
-                        return 5; // Reset countdown
+                        return retryDelay;
                     }
                     return prev - 1;
                 });
@@ -43,12 +46,13 @@ export default function ServerErrorRetry({
                 if (timer) clearInterval(timer);
             };
         }
-    }, [retryCount, autoRetry, maxRetries]);
+    }, [retryCount, autoRetry, maxRetries, retryDelay]);
 
     const handleRetry = async () => {
         if (isRetrying) return;
 
         setIsRetrying(true);
+        setErrorDetails(null);
 
         try {
             if (onRetry) {
@@ -58,12 +62,13 @@ export default function ServerErrorRetry({
         } catch (err) {
             console.error('Retry failed:', err);
             setRetryCount(prev => prev + 1);
+            setErrorDetails(err instanceof Error ? err.message : String(err));
         } finally {
             setIsRetrying(false);
         }
     };
 
-    const progressPercentage = ((5 - countdown) / 5) * 100;
+    const progressPercentage = ((retryDelay - countdown) / retryDelay) * 100;
 
     return (
         <div className="flex flex-col items-center justify-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md max-w-lg mx-auto my-8">
@@ -77,6 +82,13 @@ export default function ServerErrorRetry({
                 {message}
             </p>
 
+            {errorDetails && (
+                <div className="text-xs text-red-500 dark:text-red-400 mb-4 p-2 bg-red-50 dark:bg-red-900/20 rounded max-w-full overflow-auto">
+                    <p className="font-semibold">Error details:</p>
+                    <p className="break-words">{errorDetails}</p>
+                </div>
+            )}
+
             {autoRetry && retryCount < maxRetries ? (
                 <div className="w-full max-w-xs">
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -89,6 +101,10 @@ export default function ServerErrorRetry({
                             className="bg-primary h-full transition-all duration-1000 ease-linear"
                             style={{ width: `${progressPercentage}%` }}
                         />
+                    </div>
+
+                    <div className="text-xs text-gray-500 mt-2 text-center">
+                        Attempt {retryCount + 1} of {maxRetries}
                     </div>
                 </div>
             ) : (
@@ -113,10 +129,17 @@ export default function ServerErrorRetry({
                 ) : (
                     <>
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Retry
+                        Retry Now
                     </>
                 )}
             </button>
+
+            {retryCount >= maxRetries && (
+                <p className="text-xs text-gray-500 mt-4">
+                    Try refreshing the page or check your internet connection.
+                    If the problem persists, the server might be temporarily unavailable.
+                </p>
+            )}
         </div>
     );
 } 

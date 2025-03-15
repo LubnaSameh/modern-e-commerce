@@ -113,6 +113,15 @@ class ApiCache {
       }
     }
   }
+
+  // Add a function to get expired cache data as fallback
+  getExpired<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return null;
+    }
+    return entry.data as T;
+  }
 }
 
 // Create a singleton instance
@@ -123,12 +132,14 @@ export const apiCache = new ApiCache();
  * @param url URL to fetch
  * @param options Fetch options
  * @param ttl Cache TTL in milliseconds
+ * @param maxRetries Maximum number of retries
  * @returns Promise with response data
  */
 export async function fetchWithCache<T>(
   url: string,
   options: RequestInit = {},
-  ttl: number = 5 * 60 * 1000 // 5 minutes default
+  ttl: number = 5 * 60 * 1000, // 5 minutes default
+  maxRetries: number = 2 // Add retry capability
 ): Promise<T> {
   // Create a cache key from URL and options
   const cacheKey = `${url}-${JSON.stringify(options)}`;
@@ -136,22 +147,76 @@ export async function fetchWithCache<T>(
   // Check if we have a cached response
   const cachedData = apiCache.get<T>(cacheKey);
   if (cachedData) {
+    console.log(`Cache hit for ${url}`);
     return cachedData;
   }
 
-  // If not cached or expired, fetch new data
-  const response = await fetch(url, options);
+  console.log(`Cache miss for ${url}, fetching...`);
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  // Implementation of retry logic
+  let lastError: Error | null = null;
+  let retryCount = 0;
+
+  while (retryCount <= maxRetries) {
+    try {
+      // If not cached or expired, fetch new data
+      const controller = new AbortController();
+
+      // If the request doesn't already have a signal, add ours
+      const requestOptions = {
+        ...options,
+        signal: options.signal || controller.signal
+      };
+
+      // Set timeout for fetch (unless one is already provided)
+      let timeoutId: NodeJS.Timeout | null = null;
+      if (!options.signal) {
+        timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      }
+
+      const response = await fetch(url, requestOptions);
+
+      // Clear timeout if we set one
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Cache the response
+      apiCache.set<T>(cacheKey, data, ttl);
+
+      return data;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      retryCount++;
+
+      // If we've reached max retries or the fetch was aborted, give up
+      if (retryCount > maxRetries || (error instanceof DOMException && error.name === 'AbortError')) {
+        console.error(`Fetch failed after ${retryCount} attempts:`, error);
+        break;
+      }
+
+      console.warn(`Retry ${retryCount}/${maxRetries} for ${url}`);
+
+      // Wait a bit before retrying, with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    }
   }
 
-  const data = await response.json();
+  // If we have a cached value, even if expired, return it as fallback
+  const fallbackData = apiCache.getExpired<T>(cacheKey);
+  if (fallbackData) {
+    console.warn(`Using expired cache data for ${url} as fallback`);
+    return fallbackData;
+  }
 
-  // Cache the response
-  apiCache.set<T>(cacheKey, data, ttl);
-
-  return data;
+  // If all retries failed and no fallback data, throw the last error
+  throw lastError || new Error(`Failed to fetch ${url} after ${maxRetries} retries`);
 }
 
 // Clean expired cache entries every 5 minutes
