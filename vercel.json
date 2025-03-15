@@ -11,6 +11,36 @@
     ],
     "routes": [
         {
+            "src": "/api/test(.*)",
+            "dest": "/api/test",
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+            }
+        },
+        {
+            "src": "/api/db-check(.*)",
+            "dest": "/api/db-check",
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+            }
+        },
+        {
+            "src": "/api/vercel-db-health(.*)",
+            "dest": "/api/vercel-db-health",
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+            }
+        },
+        {
             "src": "/api/public-db-test(.*)",
             "dest": "/api/public-db-test",
             "headers": {
