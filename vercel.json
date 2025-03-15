@@ -3,28 +3,6 @@
     "buildCommand": "next build",
     "installCommand": "npm install",
     "framework": "nextjs",
-    "builds": [
-        {
-            "src": "package.json",
-            "use": "@vercel/next"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/$1",
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
-            }
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/$1"
-        }
-    ],
     "env": {
         "MONGODB_ATLAS_URI": "mongodb+srv://e-commerce:MtJfO44EPiiZnOCk@e-commerce-cluster.4p2fq.mongodb.net/e-commerce?retryWrites=true&w=majority",
         "MONGODB_URI": "mongodb+srv://e-commerce:MtJfO44EPiiZnOCk@e-commerce-cluster.4p2fq.mongodb.net/e-commerce?retryWrites=true&w=majority",
@@ -33,9 +11,6 @@
         "NEXTAUTH_URL": "https://e-commerce-lubna-sameh-mohameds-projects.vercel.app",
         "NEXTAUTH_DEBUG": "true",
         "NODE_ENV": "production",
-        "VERCEL_ENV": "production",
-        "CLOUDINARY_CLOUD_NAME": "dwwvk1fzb",
-        "CLOUDINARY_API_KEY": "274818539713398",
-        "CLOUDINARY_API_SECRET": "V6tZhUZeIQZG5KJbVBl12VweFa0"
+        "VERCEL_ENV": "production"
     }
 }
