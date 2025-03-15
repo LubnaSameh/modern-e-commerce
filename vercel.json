@@ -56,25 +56,6 @@
             "dest": "/$1"
         }
     ],
-    "headers": [
-        {
-            "source": "/api/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET, POST, PUT, DELETE, OPTIONS"
-                },
-                {
-                    "key": "Access-Control-Allow-Headers",
-                    "value": "Content-Type, Authorization"
-                }
-            ]
-        }
-    ],
     "env": {
         "MONGODB_ATLAS_URI": "mongodb+srv://e-commerce:MtJfO44EPiiZnOCk@e-commerce-cluster.4p2fq.mongodb.net/e-commerce?retryWrites=true&w=majority",
         "MONGODB_URI": "mongodb+srv://e-commerce:MtJfO44EPiiZnOCk@e-commerce-cluster.4p2fq.mongodb.net/e-commerce?retryWrites=true&w=majority",
