@@ -4,6 +4,7 @@ import { useCallback, useState, useEffect } from "react";
 import { ProductFilter } from "./ProductGrid";
 import { motion } from "framer-motion";
 import { ChevronDown, X, Loader2 } from "lucide-react";
+import { FEATURED_CATEGORIES } from "@/lib/categories";
 
 interface FilterSidebarProps {
     initialFilters?: ProductFilter;
@@ -23,10 +24,10 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
         price: true,
         rating: true
     });
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [categories, setCategories] = useState<Category[]>(FEATURED_CATEGORIES);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
-    // Fetch categories from API
+    // Fetch categories from API and combine with featured categories
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -34,10 +35,41 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
                 const response = await fetch('/api/categories');
                 if (response.ok) {
                     const data = await response.json();
-                    setCategories(data);
+
+                    // Convert API data to the Category interface
+                    const apiCategories = data.map((cat: any) => ({
+                        id: cat.id || cat._id || '',
+                        name: cat.name
+                    }));
+
+                    // Create a map of categories keyed by lowercase ID to prevent duplicates
+                    const categoryMap = new Map<string, Category>();
+
+                    // First add all the featured categories (these have priority)
+                    FEATURED_CATEGORIES.forEach(cat => {
+                        categoryMap.set(cat.id.toLowerCase(), {
+                            id: cat.id.toLowerCase(), // Standardize all IDs to lowercase
+                            name: cat.name // Keep the proper casing for display
+                        });
+                    });
+
+                    // Then add API categories if they don't exist in the map already
+                    apiCategories.forEach(cat => {
+                        const lowerId = cat.id.toLowerCase();
+                        if (!categoryMap.has(lowerId)) {
+                            categoryMap.set(lowerId, {
+                                id: lowerId, // Standardize all IDs to lowercase
+                                name: cat.name
+                            });
+                        }
+                    });
+
+                    // Convert map back to array
+                    setCategories(Array.from(categoryMap.values()));
                 }
             } catch (error) {
                 console.error("Error fetching categories:", error);
+                // Keep default featured categories on error
             } finally {
                 setIsLoadingCategories(false);
             }
@@ -63,10 +95,16 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
 
     // Handle category selection
     const handleCategoryChange = (categoryId: string, categoryName: string) => {
-        updateFilters({ 
+        // Ensure category ID is lowercase for consistency
+        const normalizedCategoryId = categoryId === "all" ? undefined : categoryId.toLowerCase();
+
+        // For "All Categories", we use undefined, otherwise use the exact category name from the list
+        updateFilters({
             category: categoryId === "all" ? undefined : categoryName,
-            categoryId: categoryId === "all" ? undefined : categoryId
+            categoryId: normalizedCategoryId
         });
+
+        console.log(`Selected category: ${categoryName}, categoryId: ${normalizedCategoryId}`);
     };
 
     // Handle price range change
@@ -191,25 +229,23 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
                                             <div className="flex items-center">
                                                 <button
                                                     onClick={() => handleCategoryChange("all", "All")}
-                                                    className={`w-full text-left py-1.5 px-2 rounded text-sm ${
-                                                        !filters.category && !filters.categoryId
+                                                    className={`w-full text-left py-1.5 px-2 rounded text-sm ${!filters.category && !filters.categoryId
                                                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium"
                                                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     All Categories
                                                 </button>
                                             </div>
-                                            
+
                                             {categories.map((category) => (
                                                 <div key={category.id} className="flex items-center">
                                                     <button
                                                         onClick={() => handleCategoryChange(category.id, category.name)}
-                                                        className={`w-full text-left py-1.5 px-2 rounded text-sm ${
-                                                            filters.categoryId === category.id
+                                                        className={`w-full text-left py-1.5 px-2 rounded text-sm ${filters.categoryId === category.id
                                                             ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium"
                                                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {category.name}
                                                     </button>
@@ -326,8 +362,8 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
                                     key={rating}
                                     onClick={() => handleRatingChange(rating)}
                                     className={`w-full flex items-center text-left px-2 py-1.5 rounded ${filters.minRating === rating
-                                            ? "bg-blue-50 dark:bg-blue-900/30"
-                                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        ? "bg-blue-50 dark:bg-blue-900/30"
+                                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
                                         }`}
                                 >
                                     <div className="flex items-center">
@@ -336,8 +372,8 @@ export default function FilterSidebar({ initialFilters = {}, onFilterChange }: F
                                                 key={i}
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 className={`h-4 w-4 ${i < rating
-                                                        ? "text-yellow-400 fill-yellow-400"
-                                                        : "text-gray-300 dark:text-gray-600"
+                                                    ? "text-yellow-400 fill-yellow-400"
+                                                    : "text-gray-300 dark:text-gray-600"
                                                     }`}
                                                 viewBox="0 0 20 20"
                                                 fill="currentColor"

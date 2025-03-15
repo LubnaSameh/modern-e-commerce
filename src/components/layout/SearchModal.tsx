@@ -84,7 +84,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     // Fetch search results
     useEffect(() => {
         async function fetchSearchResults() {
-            if (!debouncedSearchTerm) {
+            if (!debouncedSearchTerm.trim()) {
                 setSearchResults([]);
                 setError(null);
                 return;
@@ -102,14 +102,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     },
                 });
 
-                const data = await response.json();
-
                 if (!response.ok) {
-                    console.error('Search error:', data.error || 'Unknown error', 'Status:', response.status);
-                    setError(data.error || `Failed to search products (${response.status}). Please try again.`);
-                    setSearchResults([]);
-                    return;
+                    throw new Error(`Search request failed with status ${response.status}`);
                 }
+
+                const data = await response.json();
 
                 if (!Array.isArray(data)) {
                     console.error('Invalid search response format:', data);
@@ -169,7 +166,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search products..."
+                                placeholder="Search for products, categories, brands..."
                                 className="w-full py-3 pl-10 pr-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                             />
                             {searchTerm && (
@@ -253,9 +250,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         </div>
                     ) : debouncedSearchTerm ? (
                         <div className="p-4 text-center">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">No products found</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No products found for "{debouncedSearchTerm}"</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Try a different search term</p>
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="p-4 text-center">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Start typing to search for products</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer with close button */}

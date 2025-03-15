@@ -236,9 +236,17 @@ const sampleProducts = [
 ];
 
 // Get similar products based on category
-const getSimilarProducts = (productId: string, category: string) => {
+const getSimilarProducts = (productId: string, category: string, productName: string) => {
     return sampleProducts
-        .filter(p => p.id !== productId && p.category === category)
+        .filter(p => {
+            // Filter out current product by both ID and name for more reliable filtering
+            const idMatch = p.id === productId;
+            const nameMatch = p.name === productName;
+            const categoryMatch = p.category === category;
+
+            // Only include products that are in the same category but are not the current product
+            return categoryMatch && !idMatch && !nameMatch;
+        })
         .slice(0, 4);
 };
 
@@ -294,7 +302,7 @@ export default function ProductDetailPage() {
                     const sampleProduct = sampleProducts.find(p => p.id === productId);
                     if (sampleProduct) {
                         setProduct(sampleProduct);
-                        const similar = getSimilarProducts(productId, sampleProduct.category);
+                        const similar = getSimilarProducts(productId, sampleProduct.category, sampleProduct.name);
                         setRelatedProducts(similar);
                     } else {
                         setError('Sample product not found');
@@ -316,7 +324,10 @@ export default function ProductDetailPage() {
                     return;
                 }
 
-                const data = await response.json();
+                const apiResponse = await response.json();
+
+                // Extract the product data from the 'product' key in the response
+                const data = apiResponse.product || apiResponse;
                 console.log('Product data from API:', data);
 
                 // Handle image URL properly - convert relative URLs to absolute
@@ -346,10 +357,10 @@ export default function ProductDetailPage() {
 
                 // Convert API product to the format expected by the UI
                 const formattedProduct = {
-                    id: data.id,
+                    id: data._id ? data._id.toString() : data.id,
                     name: data.name,
                     price: data.price,
-                    description: data.description,
+                    description: data.description || 'No description available for this product.',
                     rating: 4.5, // Default rating
                     reviewCount: Math.floor(Math.random() * 100) + 10, // Random review count
                     images: [
@@ -358,13 +369,14 @@ export default function ProductDetailPage() {
                         ...additionalImages
                     ],
                     stock: data.stock,
-                    category: data.category?.name || 'Other',
+                    // Get category name from the normalized structure
+                    category: data.category?.name || (typeof data.category === 'string' ? data.category : 'Uncategorized'),
                     isNew: new Date(data.createdAt).getTime() > Date.now() - (30 * 24 * 60 * 60 * 1000), // Consider "new" if less than 30 days old
                     features: [
                         'Feature 1', 'Feature 2', 'Feature 3', 'Feature 4', 'Feature 5'
                     ],
                     specifications: {
-                        "Category": data.category?.name || 'Other',
+                        "Category": data.category?.name || (typeof data.category === 'string' ? data.category : 'Uncategorized'),
                         "Stock": data.stock.toString(),
                         "ID": data.id
                     }
@@ -374,7 +386,8 @@ export default function ProductDetailPage() {
 
                 // Fetch related products from the same category
                 try {
-                    const categoryName = data.category?.name;
+                    // Get the actual category name from the normalized structure
+                    const categoryName = data.category?.name || (typeof data.category === 'string' ? data.category : null);
                     console.log('Attempting to fetch related products for category:', categoryName);
                     console.log('Full category data:', data.category);
 
@@ -390,11 +403,20 @@ export default function ProductDetailPage() {
                             const relatedData = await relatedResponse.json();
                             console.log('Related products API response:', relatedData);
 
+                            // Extract products array from the API response
                             const relatedApiProducts = relatedData.products || [];
                             console.log('Total products returned:', relatedApiProducts.length);
 
-                            // Filter out the current product
-                            const otherProducts = relatedApiProducts.filter((p: APIProduct) => p.id !== productId);
+                            // Filter out the current product - ensure we match by both ID and name for complete filtering
+                            const otherProducts = relatedApiProducts.filter((p: APIProduct) => {
+                                // Check multiple ways to ensure the current product is filtered out
+                                // 1. By MongoDB ID (either _id or id formats)
+                                const idMatch = p._id?.toString() === productId || p.id?.toString() === productId;
+                                // 2. By product name for additional safety
+                                const nameMatch = p.name === data.name;
+                                // Only include products that don't match the current product
+                                return !idMatch && !nameMatch;
+                            });
 
                             // Log the number of actual database products found for debugging
                             console.log(`Found ${otherProducts.length} actual database products in category ${categoryName}`);
@@ -419,13 +441,21 @@ export default function ProductDetailPage() {
                                     }
 
                                     return {
-                                        id: p.id,
+                                        id: p._id ? p._id.toString() : p.id,
                                         name: p.name,
                                         price: p.price,
-                                        rating: p.rating || 4.5,
-                                        image: imageUrl,
+                                        description: p.description || 'No description available',
+                                        rating: 4.5, // Default rating
+                                        images: [imageUrl],
                                         stock: p.stock || 10,
-                                        category: p.category?.name || 'Other',
+                                        category: p.category?.name || (typeof p.category === 'string' ? p.category : 'Uncategorized'),
+                                        isNew: new Date(p.createdAt).getTime() > Date.now() - (30 * 24 * 60 * 60 * 1000),
+                                        features: ['Feature 1', 'Feature 2', 'Feature 3'],
+                                        specifications: {
+                                            "Category": p.category?.name || (typeof p.category === 'string' ? p.category : 'Uncategorized'),
+                                            "Stock": (p.stock || 0).toString(),
+                                            "ID": p._id ? p._id.toString() : p.id
+                                        },
                                         // Add a flag to identify these are real products from DB
                                         isRealProduct: true
                                     };
@@ -458,10 +488,12 @@ export default function ProductDetailPage() {
                                 console.log(`No real products found. Fallback to sample products in category ${categoryForSamples}`);
 
                                 const sampleRelatedProducts = categoryForSamples ?
-                                    sampleProducts
-                                        .filter(p => p.category.toLowerCase() === categoryForSamples.toLowerCase())
-                                        .slice(0, 4) :
-                                    sampleProducts.slice(0, 4);
+                                    sampleProducts.filter(p => {
+                                        const categoryMatch = p.category.toLowerCase() === categoryForSamples.toLowerCase();
+                                        const nameMatch = p.name === data.name;
+                                        return categoryMatch && !nameMatch;
+                                    }).slice(0, 4) :
+                                    sampleProducts.filter(p => p.name !== data.name).slice(0, 4);
 
                                 setRelatedProducts(sampleRelatedProducts);
                             }
@@ -472,8 +504,12 @@ export default function ProductDetailPage() {
                     // Fallback to sample data
                     const categoryForSamples = data.category?.name || '';
                     const sampleRelatedProducts = categoryForSamples ?
-                        sampleProducts.filter(p => p.category === categoryForSamples).slice(0, 4) :
-                        sampleProducts.slice(0, 4);
+                        sampleProducts.filter(p => {
+                            const categoryMatch = p.category.toLowerCase() === categoryForSamples.toLowerCase();
+                            const nameMatch = p.name === data.name;
+                            return categoryMatch && !nameMatch;
+                        }).slice(0, 4) :
+                        sampleProducts.filter(p => p.name !== data.name).slice(0, 4);
 
                     setRelatedProducts(sampleRelatedProducts);
                 }
@@ -585,16 +621,12 @@ export default function ProductDetailPage() {
                 />
 
                 {/* Related Products */}
-                {/* Add debug info to see if relatedProducts array exists and has items */}
-                <div className="mt-8 text-gray-500 dark:text-gray-400">
-                    <p>Debug: Found {relatedProducts.length} related products</p>
-                </div>
-
-                {/* Render RelatedProducts even if empty, for debugging */}
-                <RelatedProducts
-                    title="You may also like"
-                    products={relatedProducts}
-                />
+                {relatedProducts.length > 0 && (
+                    <RelatedProducts
+                        title="You may also like"
+                        products={relatedProducts}
+                    />
+                )}
             </div>
         </div>
     );

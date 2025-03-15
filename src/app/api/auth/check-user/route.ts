@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getUserByEmail } from '@/models/User';
 
 export async function GET(request: Request) {
     try {
@@ -13,11 +13,8 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Check if a user with this email exists
-        const user = await db.user.findUnique({
-            where: { email },
-            select: { id: true } // Only select the ID field to minimize data exposure
-        });
+        // Check if a user with this email exists using MongoDB
+        const user = await getUserByEmail(email);
 
         // Return whether the user exists or not
         return NextResponse.json({

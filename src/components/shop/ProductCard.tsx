@@ -36,12 +36,12 @@ function ProductCard({
 }: ProductCardProps) {
     const [isHovered, setIsHovered] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
-    
+
     // Use a fallback image URL if image is empty or undefined
-    const imageUrl = image && image.trim() !== "" 
-        ? image 
+    const imageUrl = image && image.trim() !== ""
+        ? image
         : "https://via.placeholder.com/400?text=No+Image";
-    
+
     // Check if the image URL is a local URL (localhost)
     const isLocalUrl = (url: string) => {
         return url.includes('localhost') || url.startsWith('/');
@@ -49,10 +49,10 @@ function ProductCard({
 
     // Get addItem function from cart store - use the exact function to prevent re-renders
     const addItem = useCartStore(state => state.addItem);
-    
+
     // Get wishlist store functions
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
-    
+
     // Check if product is in wishlist on component mount
     useEffect(() => {
         // Ensure we're on the client side
@@ -60,7 +60,7 @@ function ProductCard({
             try {
                 // Force rehydration of the wishlist store
                 useWishlistStore.persist.rehydrate();
-                
+
                 // Check if the product is in the wishlist
                 const inWishlist = isInWishlist(id);
                 setIsFavorite(inWishlist);
@@ -73,7 +73,7 @@ function ProductCard({
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation(); // Prevent navigation when clicking the button
-        
+
         // Add item to cart using our cart store
         addItem({
             id,
@@ -82,7 +82,7 @@ function ProductCard({
             image: imageUrl, // Use the fallback image URL if needed
             stock
         }, 1);
-        
+
         // Show success toast
         toast.success(`${name} added to cart!`, {
             position: "top-right",
@@ -94,14 +94,14 @@ function ProductCard({
         // Ensure the event doesn't bubble up and cause navigation
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Toggle the favorite state
         const newState = !isFavorite;
         setIsFavorite(newState);
-        
+
         // Ensure we're on the client side
         if (typeof window === 'undefined') return;
-        
+
         try {
             if (newState) {
                 // Add to wishlist with guaranteed imageUrl
@@ -153,7 +153,7 @@ function ProductCard({
             </div>
 
             {/* Favorite Button - Wrap in a div to better isolate the click event */}
-            <div 
+            <div
                 className="absolute right-3 top-3 z-20"
                 onClick={(e) => {
                     // Additional layer of event stopping
@@ -164,9 +164,9 @@ function ProductCard({
                 <button
                     className={`p-2 rounded-full transition-all transform 
                     ${isFavorite
-                        ? 'bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-400'
-                        : 'bg-white/80 text-gray-600 dark:bg-gray-800/80 dark:text-gray-400'
-                    } hover:scale-110 backdrop-blur-sm`}
+                            ? 'bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-400'
+                            : 'bg-white/80 text-gray-600 dark:bg-gray-800/80 dark:text-gray-400'
+                        } hover:scale-110 backdrop-blur-sm`}
                     onClick={handleToggleFavorite}
                     aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
                     type="button" // Explicitly set button type to prevent form submission
@@ -186,9 +186,8 @@ function ProductCard({
                         alt={name}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className={`object-cover transition-all duration-500 ${
-                            isHovered ? "scale-110" : "scale-100"
-                        } dark:brightness-90`}
+                        className={`object-cover transition-all duration-500 ${isHovered ? "scale-110" : "scale-100"
+                            } dark:brightness-90`}
                         loading="lazy"
                     />
                 ) : (

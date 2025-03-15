@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-Commerce Website
 
-## Getting Started
+مشروع متجر إلكتروني مبني باستخدام Next.js و MongoDB Atlas و Tailwind CSS.
 
-First, run the development server:
+## المميزات
 
+* واجهة مستخدم عصرية وسهلة الاستخدام
+* اتصال بقاعدة بيانات MongoDB Atlas
+* إدارة المنتجات والتصنيفات 
+* نظام المصادقة وإدارة المستخدمين
+* سلة التسوق والمفضلة
+
+## متطلبات التشغيل
+
+* Node.js 16.8.0 أو أحدث
+* حساب MongoDB Atlas (للإنتاج)
+* npm أو yarn
+
+## طريقة الإعداد المحلي
+
+1. قم بنسخ المشروع:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/e-commerce.git
+cd e-commerce
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. تثبيت التبعيات:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. إنشاء ملف `.env.local` وإضافة متغيرات البيئة:
+```
+MONGODB_URI=your_mongodb_connection_string
+MONGODB_DB_NAME=e-commerce
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3003
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. تشغيل المشروع في بيئة التطوير:
+```bash
+npm run dev
+```
 
-## Learn More
+## النشر على Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. قم برفع المشروع إلى GitHub.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. سجل دخول إلى [Vercel](https://vercel.com) وانقر على "New Project".
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. اختر المستودع من GitHub.
 
-## Deploy on Vercel
+4. أضف متغيرات البيئة التالية:
+   - `MONGODB_ATLAS_URI`: رابط الاتصال بـ MongoDB Atlas
+   - `MONGODB_DB_NAME`: اسم قاعدة البيانات
+   - `NEXTAUTH_SECRET`: مفتاح التشفير لـ NextAuth.js
+   - `NEXTAUTH_URL`: رابط موقعك (مثال: https://your-project.vercel.app)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. انقر على "Deploy" وانتظر اكتمال عملية النشر.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ملاحظات هامة للنشر
+
+* تأكد من إضافة عنوان `0.0.0.0/0` إلى قائمة السماح في MongoDB Atlas للسماح بالاتصال من Vercel.
+* إذا كنت تستخدم المصادقة، تأكد من تحديث رابط `NEXTAUTH_URL` ليتوافق مع رابط النشر.
+
+## تنبيه أمان
+
+* تأكد من عدم رفع أي ملفات `.env` تحتوي على معلومات حساسة إلى GitHub.
+* استخدم متغيرات البيئة في Vercel بدلاً من ذلك.
+
+## الترخيص
+
+هذا المشروع مرخص تحت رخصة MIT.

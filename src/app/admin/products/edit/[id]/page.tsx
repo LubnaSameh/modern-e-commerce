@@ -88,7 +88,7 @@ export default function EditProductPage() {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
-                
+
                 // Check if this is a sample product
                 if (id.startsWith('sample-')) {
                     const sampleProduct = sampleProducts.find(p => p.id === id);
@@ -144,7 +144,7 @@ export default function EditProductPage() {
             <div className="text-center text-red-500 py-8">
                 {error || 'Product not found'}
                 <div className="mt-4">
-                    <button 
+                    <button
                         onClick={() => router.push('/admin/products')}
                         className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 text-gray-800"
                     >

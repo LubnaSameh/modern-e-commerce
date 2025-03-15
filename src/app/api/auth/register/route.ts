@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import db from "@/lib/db";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { connectToDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 export async function POST(request: NextRequest) {
     try {
@@ -37,10 +37,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // اتصال بقاعدة البيانات MongoDB
+        const { db } = await connectToDatabase();
+        const usersCollection = db.collection('users');
+        const cartsCollection = db.collection('carts');
+
         // Check if user already exists
-        const existingUser = await db.user.findUnique({
-            where: { email }
-        });
+        const existingUser = await usersCollection.findOne({ email });
 
         if (existingUser) {
             console.log("User already exists:", email);
@@ -54,48 +57,46 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
-            // Simplified approach: Create the user with the cart in a single operation
-            const user = await db.user.create({
-                data: {
-                    name,
-                    email,
-                    password: hashedPassword,
-                    cart: {
-                        create: {} // Create an empty cart for the user
-                    }
-                },
-                // Include the cart in the response to verify it was created
-                include: {
-                    cart: true
-                }
-            });
+            // Create a new user
+            const userData = {
+                name,
+                email,
+                password: hashedPassword,
+                role: "USER",
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
 
-            console.log("User created successfully with ID:", user.id);
-            console.log("Cart created with ID:", user.cart?.id);
+            const result = await usersCollection.insertOne(userData);
+            const userId = result.insertedId;
+
+            // Create an empty cart for the user
+            const cartData = {
+                userId: userId.toString(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            const cartResult = await cartsCollection.insertOne(cartData);
+
+            console.log("User created successfully with ID:", userId);
+            console.log("Cart created with ID:", cartResult.insertedId);
 
             // Don't send password back to client
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password: _password, ...userWithoutPassword } = user;
+            const { password: _password, ...userWithoutPassword } = userData;
 
             return NextResponse.json(
                 {
-                    user: userWithoutPassword,
+                    user: {
+                        id: userId.toString(),
+                        ...userWithoutPassword
+                    },
                     message: "User registered successfully"
                 },
                 { status: 201 }
             );
         } catch (dbError) {
             console.error("Database error during user creation:", dbError);
-
-            // Better error handling for Prisma errors
-            if (dbError instanceof PrismaClientKnownRequestError) {
-                if (dbError.code === 'P2002') {
-                    return NextResponse.json(
-                        { error: "A user with this email already exists" },
-                        { status: 409 }
-                    );
-                }
-            }
 
             return NextResponse.json(
                 {
@@ -105,14 +106,10 @@ export async function POST(request: NextRequest) {
                 { status: 500 }
             );
         }
-
     } catch (error) {
         console.error("Registration error:", error);
         return NextResponse.json(
-            {
-                error: "An error occurred during registration",
-                details: error instanceof Error ? error.message : String(error)
-            },
+            { error: "Registration failed", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }

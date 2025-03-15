@@ -18,18 +18,18 @@ interface ActionButtonsProps {
 export default function ActionButtons({ onSearchClick, onMobileMenuToggle, isMobileMenuOpen }: ActionButtonsProps) {
     const [mounted, setMounted] = useState(false);
     const [cartDropdownOpen, setCartDropdownOpen] = useState(false);
-    
+
     // Use individual selectors to prevent re-render loops
     const cartTotalItems = useCartStore(state => state.totalItems);
     const wishlistTotalItems = useWishlistStore(state => state.totalItems);
-    
+
     const cartDropdownRef = useRef<HTMLDivElement>(null);
-    
+
     // Wait for component to be mounted
     useEffect(() => {
         setMounted(true);
     }, []);
-    
+
     // Close cart dropdown when clicking outside
     useEffect(() => {
         const closeCartDropdown = (event: MouseEvent) => {
@@ -44,7 +44,7 @@ export default function ActionButtons({ onSearchClick, onMobileMenuToggle, isMob
         if (cartDropdownOpen && mounted) {
             document.addEventListener('mousedown', closeCartDropdown);
         }
-        
+
         return () => {
             document.removeEventListener('mousedown', closeCartDropdown);
         };
@@ -56,7 +56,11 @@ export default function ActionButtons({ onSearchClick, onMobileMenuToggle, isMob
             setCartDropdownOpen(true);
         }
     };
-    
+
+    // Ensure cart count is never negative
+    const safeCartCount = mounted ? Math.max(cartTotalItems || 0, 0) : 0;
+    const safeWishlistCount = mounted ? Math.max(wishlistTotalItems || 0, 0) : 0;
+
     return (
         <div className="flex items-center space-x-4">
             {/* Search Button */}
@@ -75,16 +79,16 @@ export default function ActionButtons({ onSearchClick, onMobileMenuToggle, isMob
                 aria-label="Wishlist"
             >
                 <Heart size={20} />
-                {mounted && wishlistTotalItems > 0 && (
+                {mounted && safeWishlistCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {wishlistTotalItems}
+                        {safeWishlistCount}
                     </span>
                 )}
             </Link>
 
             {/* Cart Button with Dropdown */}
-            <div 
-                className="relative cart-dropdown-container" 
+            <div
+                className="relative cart-dropdown-container"
                 ref={cartDropdownRef}
                 onMouseEnter={() => handleCartHover(true)}
                 onMouseLeave={() => setTimeout(() => handleCartHover(false), 300)}
@@ -96,12 +100,12 @@ export default function ActionButtons({ onSearchClick, onMobileMenuToggle, isMob
                 >
                     <ShoppingCart size={20} />
                     {mounted && (
-                        <span className={`absolute -top-2 -right-2 ${cartTotalItems > 0 ? 'bg-blue-600' : 'bg-gray-400'} text-white text-xs rounded-full h-4 w-4 flex items-center justify-center`}>
-                            {cartTotalItems}
+                        <span className={`absolute -top-2 -right-2 ${safeCartCount > 0 ? 'bg-blue-600' : 'bg-gray-400'} text-white text-xs rounded-full h-4 w-4 flex items-center justify-center`}>
+                            {safeCartCount}
                         </span>
                     )}
                 </button>
-                
+
                 {/* Cart Dropdown */}
                 {cartDropdownOpen && <CartDropdown />}
             </div>

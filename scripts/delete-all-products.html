@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete All Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .warning {
+            color: #d9534f;
+            font-weight: bold;
+        }
+
+        button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Delete All Products</h1>
+    <p class="warning">WARNING: This action cannot be undone!</p>
+    <p>Clicking the button below will delete ALL products from the database.</p>
+
+    <button id="deleteButton">Delete All Products</button>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+        document.getElementById('deleteButton').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete ALL products? This action cannot be undone!')) {
+                try {
+                    document.getElementById('result').innerHTML = 'Deleting products...';
+
+                    const response = await fetch('/api/admin/products/delete-all', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const result = await response.json();
+                    console.log('Delete result:', result);
+
+                    if (response.ok) {
+                        document.getElementById('result').innerHTML =
+                            `<div style="color: green;">${result.message}</div>`;
+                    } else {
+                        document.getElementById('result').innerHTML =
+                            `<div style="color: red;">Error: ${result.error}</div>`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result').innerHTML =
+                        `<div style="color: red;">Error: ${error.message}</div>`;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

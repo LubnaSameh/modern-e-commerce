@@ -31,24 +31,30 @@ function ProductCard({ product }: ProductCardProps) {
     const [isHovered, setIsHovered] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
     const [mounted, setMounted] = useState(false);
-    
+    const [lowQualityImageUrl, setLowQualityImageUrl] = useState<string>('');
+
     // Get addItem function from cart store
     const { addItem } = useCartStore();
-    
+
     // Get wishlist store functions
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
-    
+
     // Check if product is in wishlist on component mount
     useEffect(() => {
         // Set mounted to true to indicate client-side rendering
         setMounted(true);
-        
+
+        // Generate low quality version of the image URL for blur-up effect
+        if (mainImage) {
+            setLowQualityImageUrl(getLowQualityImageUrl(mainImage));
+        }
+
         // Ensure we're on the client side
         if (typeof window !== 'undefined') {
             try {
                 // Force rehydration of the wishlist store
                 useWishlistStore.persist.rehydrate();
-                
+
                 // Check if the product is in the wishlist
                 const inWishlist = isInWishlist(id);
                 setIsFavorite(inWishlist);
@@ -56,13 +62,13 @@ function ProductCard({ product }: ProductCardProps) {
                 console.error("Error checking wishlist status:", error);
             }
         }
-    }, [id, isInWishlist]);
+    }, [id, isInWishlist, mainImage]);
 
     // Memoize handlers to prevent unnecessary re-renders
     const handleAddToCart = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation(); // Prevent navigation
-        
+
         addItem({
             id,
             name,
@@ -70,7 +76,7 @@ function ProductCard({ product }: ProductCardProps) {
             image: mainImage || '/images/placeholder.jpg',
             stock: 100
         });
-        
+
         toast.success(`${name} added to cart!`);
     }, [id, name, price, mainImage, addItem]);
 
@@ -78,14 +84,14 @@ function ProductCard({ product }: ProductCardProps) {
         // Ensure the event doesn't bubble up and cause navigation
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Toggle the favorite state
         const newState = !isFavorite;
         setIsFavorite(newState);
-        
+
         // Ensure we're on the client side
         if (typeof window === 'undefined') return;
-        
+
         try {
             if (newState) {
                 // Add to wishlist
@@ -123,15 +129,12 @@ function ProductCard({ product }: ProductCardProps) {
         return null; // Return nothing during SSR to prevent hydration mismatch
     }
 
-    // Generate low quality image URL for blur-up effect
-    const lowQualityImageUrl = mainImage ? getLowQualityImageUrl(mainImage) : undefined;
-
     return (
         <Link
             href={`/shop/${id}`}
-            className="group relative flex flex-col bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            className="group flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700 relative w-full"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             {/* Badges */}
             <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-10 flex gap-2">
@@ -139,16 +142,16 @@ function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Favorite Button - Wrap in a div to better isolate the click event */}
-            <div 
+            <div
                 className="absolute right-2 sm:right-3 top-2 sm:top-3 z-20"
                 onClick={handleFavoriteContainerClick}
             >
                 <button
                     className={`p-1.5 sm:p-2 rounded-full transition-all transform 
                     ${isFavorite
-                        ? 'bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-400'
-                        : 'bg-white/80 text-gray-600 dark:bg-gray-800/80 dark:text-gray-400'
-                    } hover:scale-110 backdrop-blur-sm`}
+                            ? 'bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-400'
+                            : 'bg-white/80 text-gray-600 dark:bg-gray-800/80 dark:text-gray-400'
+                        } hover:scale-110 backdrop-blur-sm`}
                     onClick={handleToggleFavorite}
                     aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
                     type="button" // Explicitly set button type to prevent form submission
@@ -198,7 +201,7 @@ function ProductCard({ product }: ProductCardProps) {
                     </span>
                 )}
 
-                <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100">{name}</h3>
+                <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 line-clamp-2">{name}</h3>
 
                 <div className="flex items-center gap-2 mt-auto pt-1 sm:pt-2">
                     <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100">

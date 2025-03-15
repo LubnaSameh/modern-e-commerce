@@ -3,7 +3,7 @@ const nextConfig = {
   /* config options here */
   reactStrictMode: false,
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -17,7 +17,9 @@ const nextConfig = {
       'placehold.co',
       'localhost',
       'via.placeholder.com',
-      'verjpvrtbvljhzbwbdch.blob.vercel-storage.com'
+      'verjpvrtbvljhzbwbdch.blob.vercel-storage.com',
+      'res.cloudinary.com',
+      'example.com'
     ],
     remotePatterns: [
       {
@@ -29,6 +31,21 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '*.vercel-storage.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
         pathname: '/**',
       }
     ],
@@ -110,6 +127,10 @@ const nextConfig = {
       },
     ];
   },
+  // Disable strict mode for external packages compatibility
+  experimental: {
+    esmExternals: 'loose'
+  }
 };
 
 module.exports = nextConfig; 

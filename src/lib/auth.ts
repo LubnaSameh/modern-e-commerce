@@ -1,13 +1,10 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
-import { Adapter } from "next-auth/adapters";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
-import { db } from "./db";
+import { getUserByEmail } from "@/models/User";
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(db) as Adapter,
     session: {
         strategy: "jwt",
     },
@@ -32,11 +29,7 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Invalid credentials");
                 }
 
-                const user = await db.user.findUnique({
-                    where: {
-                        email: credentials.email,
-                    },
-                });
+                const user = await getUserByEmail(credentials.email);
 
                 if (!user || !user.password) {
                     throw new Error("User not found");
@@ -52,13 +45,13 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 return {
-                    id: user.id,
+                    id: user._id.toString(),
                     name: user.name,
                     email: user.email,
                     image: user.image,
                     role: user.role,
                 };
-            },
+            }
         }),
     ],
     callbacks: {
@@ -70,11 +63,10 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
         async session({ session, token }) {
-            if (token && session.user) {
-                session.user.id = token.id as string;
-                session.user.role = token.role as string;
-            }
+            session.user.id = token.id;
+            session.user.role = token.role;
             return session;
         },
     },
+    secret: process.env.NEXTAUTH_SECRET,
 }; 

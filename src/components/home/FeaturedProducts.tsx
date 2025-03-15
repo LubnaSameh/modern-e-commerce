@@ -2,11 +2,16 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
-import ProductCard from "./ProductCard";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { fetchWithCache } from "@/lib/api-cache";
 import { useSlowConnection } from "@/lib/performance";
+import { useKeepAlive } from "@/lib/keep-alive";
+import ServerErrorRetry from "@/components/ui/ServerErrorRetry";
+import Loader from "@/components/ui/Loader";
+import { FEATURED_CATEGORIES } from "@/lib/categories";
+import { getSampleProductsForHome, convertToHomeFormat, FEATURED_SAMPLE_PRODUCTS, combineProductsConsistently } from "@/lib/product-utils";
+import ProductCard from "@/components/shop/ProductCard";
 
 type Product = {
     id: string;
@@ -19,71 +24,11 @@ type Product = {
 };
 
 type ApiResponse = {
-    products: Product[];
+    products: any[];
 };
 
-// Sample products that will be combined with API data
-const sampleProducts = [
-    {
-        id: "sample-1",
-        name: "Modern Coffee Table",
-        price: 199.99,
-        mainImage: "https://images.unsplash.com/photo-1634712282287-14ed57b9cc89?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Furniture" },
-    },
-    {
-        id: "sample-2",
-        name: "Wireless Headphones",
-        price: 149.99,
-        mainImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Electronics" },
-    },
-    {
-        id: "sample-3",
-        name: "Cotton T-Shirt",
-        price: 29.99,
-        mainImage: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Clothing" },
-    },
-    {
-        id: "sample-4",
-        name: "Smart Watch",
-        price: 299.99,
-        mainImage: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Electronics" },
-    },
-    {
-        id: "sample-5",
-        name: "Leather Backpack",
-        price: 89.99,
-        mainImage: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Accessories" },
-    },
-    {
-        id: "sample-6",
-        name: "Ceramic Plant Pot",
-        price: 24.99,
-        mainImage: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Home Decor" },
-    },
-    {
-        id: "sample-7",
-        name: "Stainless Steel Water Bottle",
-        price: 19.99,
-        mainImage: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Kitchen" },
-    },
-    {
-        id: "sample-8",
-        name: "Yoga Mat",
-        price: 39.99,
-        mainImage: "https://images.unsplash.com/photo-1599447292180-45fd84092ef4?w=800&auto=format&fit=crop&q=80",
-        category: { name: "Sports" },
-    }
-];
-
-// Memoized ProductCard component
-const MemoizedProductCard = memo(ProductCard);
+// Get sample products from the shared utility
+const sampleProducts = getSampleProductsForHome();
 
 // Memoized category button
 const CategoryButton = memo(({ category, isActive, onClick }: {
@@ -94,8 +39,8 @@ const CategoryButton = memo(({ category, isActive, onClick }: {
     <button
         onClick={onClick}
         className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${isActive
-                ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+            ? "bg-primary text-white"
+            : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
             }`}
     >
         {category}
@@ -115,42 +60,115 @@ export default function FeaturedProducts() {
     // Check if user is on a slow connection
     const isSlowConnection = useSlowConnection();
 
+    // Initialize keep-alive mechanism
+    useKeepAlive();
+
     // Fetch products from API and combine with sample data
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                setLoading(true);
+    const fetchProducts = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-                // Use cached data if available (cache for 5 minutes)
-                const data = await fetchWithCache<ApiResponse>('/api/products?limit=8', {}, 5 * 60 * 1000);
-                const apiProducts = data.products || [];
+            // Use the same exact endpoint as the shop page without limit parameter
+            // to get all products including ones like 'apple'
+            const data = await fetchWithCache<ApiResponse>('/api/products', {}, 5 * 60 * 1000);
+            const apiProducts = data.products || [];
 
-                // Combine API products with sample products, making sure there are no duplicates by ID
-                const combinedProducts = [
-                    ...apiProducts,
-                    ...sampleProducts.filter(sample =>
-                        !apiProducts.some((api: Product) => api.id === sample.id)
-                    )
-                ];
+            // Convert API products to the correct format for the home page
+            const formattedApiProducts = apiProducts.map(convertToHomeFormat);
 
-                setProducts(combinedProducts);
-            } catch (error) {
-                console.error('Error fetching products:', error);
-                setError(error instanceof Error ? error.message : 'An error occurred');
+            let combinedProducts: Product[] = [];
 
-                // Fallback to sample products on error
-                setProducts(sampleProducts);
-            } finally {
-                setLoading(false);
+            if (formattedApiProducts.length > 0) {
+                // Prioritize the Apple product and other API products
+                let appleProduct = formattedApiProducts.find((p: Product) =>
+                    p.name.toLowerCase() === 'apple'
+                );
+
+                let otherApiProducts = formattedApiProducts.filter((p: Product) =>
+                    p.name.toLowerCase() !== 'apple'
+                );
+
+                // Make sure Apple product is first if it exists
+                if (appleProduct) {
+                    combinedProducts = [appleProduct, ...otherApiProducts];
+                } else {
+                    combinedProducts = [...otherApiProducts];
+                }
+
+                // Only add sample products if we don't have enough real ones
+                if (combinedProducts.length < 6) {
+                    // Add Wireless Bluetooth Earbuds and Smart Watch Series 5 first if they're in sample
+                    let earbudsProduct = sampleProducts.find((p: Product) =>
+                        p.name.includes('Wireless Bluetooth Earbuds')
+                    );
+
+                    let watchProduct = sampleProducts.find((p: Product) =>
+                        p.name.includes('Smart Watch Series 5')
+                    );
+
+                    let prioritySamples: Product[] = [];
+                    if (earbudsProduct) prioritySamples.push(earbudsProduct);
+                    if (watchProduct) prioritySamples.push(watchProduct);
+
+                    // Then add other samples without duplicating names
+                    const sampleWithoutDuplicates = sampleProducts.filter(sample =>
+                        !combinedProducts.some(api => api.name === sample.name) &&
+                        sample.name !== 'Wireless Bluetooth Earbuds' &&
+                        sample.name !== 'Smart Watch Series 5'
+                    );
+
+                    const neededCount = 6 - combinedProducts.length - prioritySamples.length;
+                    const additionalSamples = sampleWithoutDuplicates.slice(0, neededCount);
+
+                    combinedProducts = [
+                        ...combinedProducts,
+                        ...prioritySamples,
+                        ...additionalSamples
+                    ];
+                }
+            } else {
+                // If no API products, use sample products
+                combinedProducts = [...sampleProducts];
             }
-        };
 
-        fetchProducts();
+            console.log(`FeaturedProducts showing products: ${combinedProducts.map(p => p.name).join(', ')}`);
+
+            setProducts(combinedProducts);
+            setError(null);
+            return true;
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            setError(error instanceof Error ? error.message : 'An error occurred');
+
+            // On error, still show sample products
+            setProducts(sampleProducts);
+            throw error; // Rethrow for the error boundary
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    // Initial data loading
+    useEffect(() => {
+        fetchProducts().catch(err => console.error("Initial fetch failed:", err));
+    }, [fetchProducts]);
 
     // Memoize categories to prevent recalculation on each render
     const categories = useMemo(() => {
-        return ["All", ...new Set(products.filter(p => p.category).map(product => product.category?.name || ''))];
+        // Get unique product categories from actual products
+        const productCategories = [...new Set(
+            products
+                .filter(p => p.category && p.category.name)
+                .map(product => product.category?.name || '')
+        )];
+
+        // Always ensure all featured categories are included, even if no products yet
+        const featuredNames = FEATURED_CATEGORIES.map(cat => cat.name);
+        const allCategories = [...new Set([...productCategories, ...featuredNames])];
+
+        // Start with "All" and then alphabetically sort the rest
+        return ["All", ...allCategories.sort()];
     }, [products]);
 
     // Memoize filtered products to prevent recalculation on each render
@@ -172,7 +190,7 @@ export default function FeaturedProducts() {
 
     return (
         <section className="py-8 sm:py-12 md:py-16 bg-white lg:px-7 dark:bg-gray-900">
-            <div className="mx-auto container sm:px-4 ">
+            <div className="mx-auto  container">
                 <div className="text-center mb-8 sm:mb-12">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                         Featured Products
@@ -197,12 +215,20 @@ export default function FeaturedProducts() {
                 {/* Products Grid */}
                 {loading ? (
                     <div className="flex justify-center items-center py-10 sm:py-20">
-                        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-primary" />
+                        <Loader
+                            size="large"
+                            variant="dots"
+                            text="Loading featured products..."
+                        />
                     </div>
-                ) : error ? (
-                    <div className="text-center py-10 sm:py-20 text-red-500 text-sm sm:text-base">
-                        {error}
-                    </div>
+                ) : error && displayedProducts.length <= sampleProducts.length ? (
+                    // Show error state with auto-retry capability
+                    <ServerErrorRetry
+                        message="Attempting to connect to server to load real products..."
+                        onRetry={fetchProducts}
+                        autoRetry={true}
+                        maxRetries={5}
+                    />
                 ) : displayedProducts.length === 0 ? (
                     <div className="text-center py-10 sm:py-20 text-gray-500 dark:text-gray-400 text-sm sm:text-base">
                         No products found in this category.
@@ -220,22 +246,25 @@ export default function FeaturedProducts() {
                                         delay: isSlowConnection ? 0 : index * 0.1
                                     }}
                                 >
-                                    <MemoizedProductCard product={product} />
+                                    <ProductCard
+                                        id={product.id}
+                                        name={product.name}
+                                        price={product.price}
+                                        rating={4.5} // Default rating
+                                        image={product.mainImage}
+                                        category={product.category?.name}
+                                        stock={10} // Default stock
+                                    />
                                 </motion.div>
                             ))}
                         </div>
 
                         {/* View All Products Link */}
-                        {filteredProducts.length > INITIAL_DISPLAY_COUNT && (
-                            <div className="flex justify-center mt-6 sm:mt-10">
-                                <Link
-                                    href={`/shop${activeTab !== "All" ? `?category=${encodeURIComponent(activeTab)}` : ''}`}
-                                    className="bg-primary hover:bg-primary-dark text-white text-sm sm:text-base font-medium py-2 px-6 sm:px-8 rounded-full transition-colors"
-                                >
-                                    View All Products
-                                </Link>
-                            </div>
-                        )}
+                        <div className="text-center mt-8 sm:mt-12">
+                            <Link href="/shop" prefetch={false} className="inline-block py-2.5 px-5 bg-primary text-white font-medium rounded-full hover:bg-primary-dark transition-colors">
+                                View All Products
+                            </Link>
+                        </div>
                     </>
                 )}
             </div>

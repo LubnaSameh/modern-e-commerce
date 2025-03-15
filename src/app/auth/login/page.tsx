@@ -34,6 +34,15 @@ export default function LoginPage() {
                 }
             }
         }
+
+        // تحقق إضافي من localStorage للتأكد من حالة تسجيل الدخول
+        if (typeof window !== 'undefined' && window.localStorage.getItem('user-logged-in') === 'true') {
+            console.log("User is logged in according to localStorage, redirecting to home page");
+            // ضع تأخير صغير لضمان استقرار الواجهة
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 300);
+        }
     }, [status, mounted]);
 
     useEffect(() => {
@@ -111,27 +120,18 @@ export default function LoginPage() {
                         console.log('Saved user name to localStorage:', formattedName);
                     }
 
-                    // Ensure session has time to initialize
+                    // Simplified redirect approach - straight to home page
                     setTimeout(() => {
-                        // Double-check login status before redirect
-                        console.log("Login complete, checking final status before redirect");
-                        console.log("localStorage login status:", window.localStorage.getItem('user-logged-in'));
-
-                        // Force a hard reload to ensure clean session state and the navbar picks up the changes
-                        (window as Window).location.href = `/?reload=${new Date().getTime()}`;
-                    }, 1000); // Increased delay to ensure localStorage and session are both set
+                        window.location.href = '/';
+                    }, 1000);
                 } catch (error) {
                     console.error('Error saving to localStorage:', error);
                     // Fallback redirect
-                    if (typeof window !== 'undefined') {
-                        (window as Window).location.href = `/?reload=${new Date().getTime()}`;
-                    }
+                    window.location.href = '/';
                 }
             } else {
                 // Fallback if localStorage not available
-                if (typeof window !== 'undefined') {
-                    (window as Window).location.href = `/?reload=${new Date().getTime()}`;
-                }
+                window.location.href = '/';
             }
         } catch (err) {
             console.error("Login error:", err);

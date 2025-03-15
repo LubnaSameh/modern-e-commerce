@@ -25,6 +25,17 @@ export default function RegisterPage() {
     useEffect(() => {
         setMounted(true);
 
+        // التحقق ما إذا كان المستخدم مسجل دخوله بالفعل
+        if (typeof window !== 'undefined') {
+            const isLoggedIn = window.localStorage.getItem('user-logged-in') === 'true';
+            if (isLoggedIn) {
+                console.log("User is already logged in, redirecting to home page");
+                toast.info('أنت مسجل الدخول بالفعل');
+                router.push('/');
+                return;
+            }
+        }
+
         // Check if Google Auth is available
         const checkProviders = async () => {
             try {
@@ -41,7 +52,7 @@ export default function RegisterPage() {
         };
 
         checkProviders();
-    }, []);
+    }, [router]);
 
     // Handle form submission
     // معالجة تقديم النموذج
@@ -81,12 +92,15 @@ export default function RegisterPage() {
             });
 
             console.log("Registration successful:", response.data);
-            toast.success('Registration successful! Please log in with your credentials.');
+            toast.success('Registration successful! Redirecting to login...');
+
+            // تسجيل الدخول تلقائيًا بعد التسجيل الناجح - إلغاء هذه العملية
+            // وبدلاً من ذلك، التوجيه مباشرة إلى صفحة تسجيل الدخول
 
             // Redirect to login page after successful registration
             setTimeout(() => {
                 router.push('/auth/login');
-            }, 1000);
+            }, 1500);
 
         } catch (err: unknown) {
             console.error("Registration error:", err);

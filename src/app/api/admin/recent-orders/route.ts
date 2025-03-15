@@ -1,57 +1,48 @@
 import { NextResponse } from "next/server";
-import prisma, { prisma as prismaNamed } from "@/lib/prisma";
+import { connectToDatabase } from "@/lib/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     try {
         console.log("🔄 Recent orders API route called");
-        // Use either import style that works
-        const prismaClient = prisma || prismaNamed;
 
         // Get the session but don't require it
         const session = await getServerSession(authOptions);
         console.log("📊 Session status:", session ? "authenticated" : "not authenticated");
 
-        // Comment out authentication check to allow public access
-        // if (!session || session.user.role !== "ADMIN") {
-        //     return NextResponse.json(
-        //         { error: "غير مصرح لك بالوصول" },
-        //         { status: 403 }
-        //     );
-        // }
-
-        // Test database connection first
-        try {
-            await prismaClient.$queryRaw`SELECT 1+1 as result`;
-            console.log("✅ Database connection successful");
-        } catch (dbError) {
-            console.error("❌ Database connection test failed:", dbError);
-            return NextResponse.json(
-                { error: "Database connection failed", details: String(dbError) },
-                { status: 500 }
-            );
-        }
+        // اتصال بقاعدة البيانات MongoDB
+        const { db } = await connectToDatabase();
+        const ordersCollection = db.collection('orders');
 
         // Get the 5 most recent orders
         console.log("🔍 Querying recent orders...");
-        const recentOrders = await prismaClient.order.findMany({
-            take: 5,
-            orderBy: {
-                createdAt: 'desc'
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
-            }
-        });
+        const recentOrders = await ordersCollection.find({})
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .toArray();
 
-        console.log(`📦 Found ${recentOrders.length} recent orders`);
-        return NextResponse.json(recentOrders);
+        // إضافة معلومات المستخدم لكل طلب
+        const ordersWithUserInfo = await Promise.all(
+            recentOrders.map(async (order) => {
+                if (order.userId) {
+                    const usersCollection = db.collection('users');
+                    const user = await usersCollection.findOne(
+                        { _id: order.userId },
+                        { projection: { name: 1, email: 1 } }
+                    );
+
+                    return {
+                        ...order,
+                        user: user ? { name: user.name, email: user.email } : null
+                    };
+                }
+                return order;
+            })
+        );
+
+        console.log(`📦 Found ${ordersWithUserInfo.length} recent orders`);
+        return NextResponse.json(ordersWithUserInfo);
     } catch (error) {
         console.error("❌ Error fetching recent orders:", error);
         return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Eye } from "lucide-react";
+import { Eye, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Order = {
@@ -47,7 +47,7 @@ const StatusBadge = ({ status }: { status: Order["status"] }) => {
 
     return (
         <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}
         >
             {statusText[status]}
         </span>
@@ -112,6 +112,23 @@ export function RecentOrders() {
     const [orders, setOrders] = useState<Order[]>(fixedSampleOrders);
     const [isLoading, setIsLoading] = useState(false);
     const [hasRealOrders, setHasRealOrders] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Check if we're on mobile
+    useEffect(() => {
+        const checkIfMobile = () => {
+            setIsMobile(window.innerWidth < 768); // md breakpoint
+        };
+        
+        // Initial check
+        checkIfMobile();
+        
+        // Add event listener
+        window.addEventListener('resize', checkIfMobile);
+        
+        // Cleanup
+        return () => window.removeEventListener('resize', checkIfMobile);
+    }, []);
 
     useEffect(() => {
         const attemptFetchRealOrders = async () => {
@@ -182,6 +199,59 @@ export function RecentOrders() {
         );
     }
 
+    // Mobile view - card-based layout
+    if (isMobile) {
+        return (
+            <div>
+                {hasRealOrders && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-2 mb-4 rounded text-xs">
+                        Merged real orders with sample data
+                    </div>
+                )}
+                <div className="space-y-3">
+                    {orders.map((order) => (
+                        <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="font-medium text-sm">{order.id}</div>
+                                <StatusBadge status={order.status} />
+                            </div>
+                            
+                            <div className="mb-2">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {order.customer.name}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {order.customer.email}
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center text-sm">
+                                <div>
+                                    <span className="text-gray-500 dark:text-gray-400 text-xs">
+                                        {formatDate(order.date)}
+                                    </span>
+                                    <span className="mx-2 text-gray-400">•</span>
+                                    <span className="font-medium">
+                                        {formatCurrency(order.total)}
+                                    </span>
+                                </div>
+                                
+                                <Link
+                                    href={`/admin/orders/${order.id}`}
+                                    className="text-primary hover:text-primary-600 flex items-center text-xs"
+                                >
+                                    <span>View</span>
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </Link>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // Desktop view - table layout
     return (
         <div className="overflow-hidden">
             {hasRealOrders && (
@@ -249,15 +319,6 @@ export function RecentOrders() {
                         ))}
                     </tbody>
                 </table>
-            </div>
-
-            <div className="mt-4 flex justify-center">
-                <Link
-                    href="/admin/orders"
-                    className="text-sm text-primary hover:text-primary-600 font-medium"
-                >
-                    View All Orders →
-                </Link>
             </div>
         </div>
     );

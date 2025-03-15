@@ -10,6 +10,7 @@ import {
     Loader2
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { apiCache } from "@/lib/api-cache";
 
 type ProductFormData = {
     id?: string;
@@ -26,14 +27,28 @@ type Category = {
     name: string;
 };
 
-interface ProductFormProps {
+type ProductFormProps = {
     initialData?: ProductFormData;
     isEditing?: boolean;
-}
+};
+
+// Featured product categories from home page
+const featuredCategories = [
+    { id: "furniture", name: "Furniture" },
+    { id: "electronics", name: "Electronics" },
+    { id: "clothing", name: "Clothing" },
+    { id: "accessories", name: "Accessories" },
+    { id: "home-decor", name: "Home Decor" },
+    { id: "kitchen", name: "Kitchen" },
+    { id: "sports", name: "Sports" }
+];
 
 export function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    console.log("ProductForm initialData:", initialData);
+
     const [imagePreview, setImagePreview] = useState<string | null>(initialData?.mainImage || null);
     const [formData, setFormData] = useState<ProductFormData>(
         initialData || {
@@ -46,8 +61,22 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
         }
     );
 
-    // Load categories from API instead of using dummy data
-    const [categories, setCategories] = useState<Category[]>([]);
+    console.log("Initial formData state:", formData);
+
+    // Ensure formData.mainImage is set from initialData
+    useEffect(() => {
+        if (initialData?.mainImage && isEditing) {
+            console.log("Setting mainImage from initialData:", initialData.mainImage);
+            setFormData(prevData => ({
+                ...prevData,
+                mainImage: initialData.mainImage
+            }));
+            setImagePreview(initialData.mainImage);
+        }
+    }, [initialData, isEditing]);
+
+    // Combine API categories with featured categories
+    const [categories, setCategories] = useState<Category[]>(featuredCategories);
 
     // Fetch categories on component mount
     useEffect(() => {
@@ -56,10 +85,27 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                 const response = await fetch('/api/categories');
                 if (response.ok) {
                     const data = await response.json();
-                    setCategories(data);
+
+                    // Combine API categories with featured categories, avoiding duplicates
+                    const apiCategories = data.map((cat: any) => ({
+                        id: cat.id || cat._id,
+                        name: cat.name
+                    }));
+
+                    const existingCategoryNames = new Set(apiCategories.map((cat: Category) => cat.name.toLowerCase()));
+
+                    // Add featured categories that don't exist in API response
+                    const combinedCategories = [
+                        ...apiCategories,
+                        ...featuredCategories.filter(cat => !existingCategoryNames.has(cat.name.toLowerCase()))
+                    ];
+
+                    setCategories(combinedCategories);
                 }
             } catch (error) {
                 console.error("Error fetching categories:", error);
+                // On error, still use the featured categories
+                setCategories(featuredCategories);
             }
         };
 
@@ -75,6 +121,12 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
             setFormData({
                 ...formData,
                 [name]: parseFloat(value) || 0,
+            });
+        } else if (name === "categoryId") {
+            // Normalize categoryId to lowercase when it's changed
+            setFormData({
+                ...formData,
+                [name]: value.toLowerCase(),
             });
         } else {
             setFormData({
@@ -142,18 +194,29 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                 return;
             }
 
+            // Make sure mainImage is included from initial data if it exists and no new image was uploaded
+            const dataToSubmit = {
+                ...formData,
+                // Ensure mainImage is included even if not changed during edit
+                mainImage: formData.mainImage || initialData?.mainImage || "",
+                // Ensure categoryId is lowercase for consistency
+                categoryId: formData.categoryId ? formData.categoryId.toLowerCase() : "",
+            };
+
             const endpoint = isEditing
                 ? `/api/admin/products/${initialData?.id}`
                 : '/api/admin/products';
 
             const method = isEditing ? 'PUT' : 'POST';
 
+            console.log("Submitting product data:", dataToSubmit);
+
             const response = await fetch(endpoint, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(dataToSubmit),
             });
 
             if (!response.ok) {
@@ -161,12 +224,39 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                 throw new Error(errorData.error || 'An error occurred');
             }
 
+            // Clear the API cache for all product-related endpoints
+            // This ensures any product changes will immediately be reflected
+            apiCache.clear();
+
             // Show success message
             toast.success(isEditing ? "Product updated successfully!" : "Product created successfully!");
 
+            // Refresh client router to ensure updated data is fetched
+            router.refresh();
+
+            // Notify the home page of the new product
+            try {
+                // Send a message to notify clients about the product change
+                await fetch('/api/notify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        event: 'product-update',
+                        data: {
+                            action: isEditing ? 'updated' : 'created',
+                            timestamp: Date.now()
+                        }
+                    }),
+                });
+            } catch (notifyError) {
+                console.error("Error notifying clients:", notifyError);
+                // Don't block the main flow if notification fails
+            }
+
             // Redirect back to products page after successful submission
             router.push("/admin/products");
-            router.refresh();
         } catch (error) {
             console.error("Error submitting product:", error);
             toast.error(`Failed to save product: ${error instanceof Error ? error.message : 'Unknown error'}`);

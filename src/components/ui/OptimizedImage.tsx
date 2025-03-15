@@ -1,67 +1,102 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
-import Image, { ImageProps } from 'next/image';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { ImageIcon } from 'lucide-react';
 
-interface OptimizedImageProps extends Omit<ImageProps, 'onLoad' | 'onError'> {
+// تعريف خصائص المكون
+interface OptimizedImageProps {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  fill?: boolean;
+  className?: string;
+  priority?: boolean;
+  quality?: number;
   fallbackSrc?: string;
-  lowQualitySrc?: string;
-  loadingClassName?: string;
+  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
-function OptimizedImage({
+/**
+ * مكون محسن لعرض الصور مع معالجة الأخطاء وتحميل الصور البديلة
+ */
+export default function OptimizedImage({
   src,
   alt,
+  width,
+  height,
+  fill = false,
+  className = '',
+  priority = false,
+  quality = 75,
   fallbackSrc = '/images/placeholder.jpg',
-  lowQualitySrc,
-  className,
-  loadingClassName,
-  ...props
+  objectFit = 'cover'
 }: OptimizedImageProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [imgSrc, setImgSrc] = useState(lowQualitySrc || src);
+  // استخدام الصورة العادية بدلاً من next/image لتفادي مشاكل hydration
   const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageSrc, setImageSrc] = useState(src || fallbackSrc);
 
-  // When src changes, reset loading state and use the new src
+  // معالجة تغييرات مصدر الصورة
   useEffect(() => {
-    setIsLoading(true);
-    setImgSrc(lowQualitySrc || src);
+    setImageSrc(src || fallbackSrc);
     setIsError(false);
-  }, [src, lowQualitySrc]);
+    setIsLoading(true);
+  }, [src, fallbackSrc]);
 
-  // Handle successful image load
-  const handleLoad = () => {
+  const handleError = () => {
+    console.log(`Image failed to load: ${imageSrc}`);
+    setIsError(true);
     setIsLoading(false);
-    // If we were using a low quality placeholder, switch to the high quality image
-    if (lowQualitySrc && imgSrc === lowQualitySrc) {
-      setImgSrc(src);
+
+    // استخدام الصورة البديلة فقط إذا كانت مختلفة عن الصورة الأصلية
+    if (imageSrc !== fallbackSrc) {
+      setImageSrc(fallbackSrc);
     }
   };
 
-  // Handle image load error
-  const handleError = () => {
-    setIsError(true);
+  const handleLoad = () => {
     setIsLoading(false);
-    setImgSrc(fallbackSrc);
   };
 
+  // النمط العام للحاوية
+  const containerStyle = {
+    position: 'relative' as const,
+    overflow: 'hidden',
+    width: fill ? '100%' : width,
+    height: fill ? '100%' : height,
+  };
+
+  // عرض أيقونة بديلة في حالة خطأ الصورة
+  if (isError) {
+    return (
+      <div
+        className={`flex items-center justify-center bg-gray-100 dark:bg-gray-700 ${className}`}
+        style={containerStyle}
+      >
+        <ImageIcon className="text-gray-400 h-1/4 w-1/4" />
+      </div>
+    );
+  }
+
+  // استخدام الصورة العادية
   return (
-    <Image
-      {...props}
-      src={isError ? fallbackSrc : imgSrc}
-      alt={alt}
-      className={cn(
-        className,
-        isLoading && loadingClassName,
-        isLoading && 'animate-pulse bg-gray-200 dark:bg-gray-800'
+    <div className={`relative ${className}`} style={containerStyle}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="animate-pulse h-full w-full bg-gray-200 dark:bg-gray-700" />
+        </div>
       )}
-      onLoadingComplete={handleLoad}
-      onError={handleError}
-      loading="lazy"
-      quality={props.quality || 75}
-    />
+
+      <img
+        src={imageSrc}
+        alt={alt}
+        onError={handleError}
+        onLoad={handleLoad}
+        className={`w-full h-full transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        style={{ objectFit }}
+      />
+    </div>
   );
 }
-
-export default memo(OptimizedImage); 

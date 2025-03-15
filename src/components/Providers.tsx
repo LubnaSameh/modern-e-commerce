@@ -8,6 +8,8 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { registerServiceWorker } from "@/app/sw-register";
 import { CriticalCSSInjector } from "@/lib/critical-css";
+import { ServerStatusProvider } from "./ServerStatusProvider";
+import ServerStatusBar from "./ui/ServerStatusBar";
 // import { NavigationEvents } from "./NavigationEvents";
 
 // Lazy load components
@@ -26,7 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Wait for client-side hydration to complete before rendering theme-dependent UI
     useEffect(() => {
         setMounted(true);
-        
+
         // Register service worker
         registerServiceWorker();
     }, []);
@@ -36,42 +38,46 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AuthProvider>
             {/* Inject critical CSS */}
             <CriticalCSSInjector />
-            
+
             {/* Add navigation progress indicator */}
             {/* <NavigationEvents /> */}
-            
+
             {/* Force "light" as initial theme to avoid hydration mismatch */}
             <ThemeProvider
                 attribute="data-theme"
-                defaultTheme="system"
+                defaultTheme="light"
                 enableSystem
                 themes={["light", "dark"]}
                 forcedTheme={mounted ? undefined : "light"}
             >
-                <div className="flex flex-col min-h-screen">
-                    {mounted && !isAdminPath && (
-                        <Suspense fallback={<NavbarFallback />}>
-                            <Navbar />
-                        </Suspense>
-                    )}
-                    <main className="flex-grow">
-                        {mounted && (
-                            <ToastContainer
-                                position="top-right"
-                                theme="colored"
-                                autoClose={3000}
-                                pauseOnHover
-                                limit={3}
-                            />
+                <ServerStatusProvider>
+                    {mounted && <ServerStatusBar />}
+
+                    <div className="flex flex-col min-h-screen">
+                        {mounted && !isAdminPath && (
+                            <Suspense fallback={<NavbarFallback />}>
+                                <Navbar />
+                            </Suspense>
                         )}
-                        {children}
-                    </main>
-                    {mounted && !isAdminPath && (
-                        <Suspense fallback={<FooterFallback />}>
-                            <Footer />
-                        </Suspense>
-                    )}
-                </div>
+                        <main className="flex-grow">
+                            {mounted && (
+                                <ToastContainer
+                                    position="top-right"
+                                    theme="colored"
+                                    autoClose={3000}
+                                    pauseOnHover
+                                    limit={3}
+                                />
+                            )}
+                            {children}
+                        </main>
+                        {mounted && !isAdminPath && (
+                            <Suspense fallback={<FooterFallback />}>
+                                <Footer />
+                            </Suspense>
+                        )}
+                    </div>
+                </ServerStatusProvider>
             </ThemeProvider>
         </AuthProvider>
     );

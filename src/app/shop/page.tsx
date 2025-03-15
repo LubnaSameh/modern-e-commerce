@@ -8,10 +8,12 @@ import SearchBar from "@/components/shop/SearchBar";
 import SortDropdown from "@/components/shop/SortDropdown";
 import Pagination from "@/components/shop/Pagination";
 import { ProductFilter } from "@/components/shop/ProductGrid";
+import { FEATURED_CATEGORIES } from "@/lib/categories";
+import { getSampleProductsForShop, convertToShopFormat, combineProductsConsistently } from "@/lib/product-utils";
 
 // Add this interface to define the product type
 interface ProductType {
-    id: string | number;
+    id: string;
     name: string;
     price: number;
     rating: number;
@@ -20,140 +22,23 @@ interface ProductType {
     category: string;
     description?: string;
     mainImage?: string;
-    category?: {
-        name: string;
-    };
+    categoryId?: string;
 }
 
 // Add this interface for sort options
 type SortOption = 'price-asc' | 'price-desc' | 'rating' | 'newest';
 
-// Sample products data for demonstration
-const sampleProducts = [
-    {
-        id: "sample-1",
-        name: "Wireless Bluetooth Earbuds",
-        price: 89.99,
-        rating: 4.5,
-        image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
-        stock: 45,
-        category: "Electronics",
-    },
-    {
-        id: "sample-2",
-        name: "Smart Watch Series 5",
-        price: 199.99,
-        rating: 4.8,
-        image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&h=400&fit=crop",
-        stock: 30,
-        category: "Electronics",
-    },
-    {
-        id: "sample-3",
-        name: "Leather Wallet",
-        price: 49.99,
-        rating: 4.3,
-        image: "https://images.unsplash.com/photo-1606503825008-909a67e63c3d?w=400&h=400&fit=crop",
-        stock: 100,
-        category: "Accessories",
-    },
-    {
-        id: "sample-4",
-        name: "Cotton T-Shirt",
-        price: 29.99,
-        rating: 4.6,
-        image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-        stock: 78,
-        category: "Clothing",
-    },
-    {
-        id: "sample-5",
-        name: "Coffee Mug",
-        price: 19.99,
-        rating: 4.7,
-        image: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=400&h=400&fit=crop",
-        stock: 120,
-        category: "Home & Kitchen",
-    },
-    // Add more sample products to demonstrate pagination
-    {
-        id: "sample-6",
-        name: "Desk Lamp",
-        price: 39.99,
-        rating: 4.2,
-        image: "https://images.unsplash.com/photo-1580089004245-c67543d60295?w=400&h=400&fit=crop",
-        stock: 55,
-        category: "Home & Kitchen",
-    },
-    {
-        id: "sample-7",
-        name: "Bluetooth Speaker",
-        price: 69.99,
-        rating: 4.6,
-        image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop",
-        stock: 42,
-        category: "Electronics",
-    },
-    {
-        id: "sample-8",
-        name: "Yoga Mat",
-        price: 24.99,
-        rating: 4.8,
-        image: "https://images.unsplash.com/photo-1592432678016-e910b452f9a2?w=400&h=400&fit=crop",
-        stock: 60,
-        category: "Sports",
-    },
-    {
-        id: "sample-9",
-        name: "Stainless Steel Water Bottle",
-        price: 18.99,
-        rating: 4.7,
-        image: "https://images.unsplash.com/photo-1589365278144-c9e705f843ba?w=400&h=400&fit=crop",
-        stock: 85,
-        category: "Accessories",
-    },
-    {
-        id: "sample-10",
-        name: "Wireless Keyboard",
-        price: 49.99,
-        rating: 4.4,
-        image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=400&fit=crop",
-        stock: 32,
-        category: "Electronics",
-    },
-    {
-        id: "sample-11",
-        name: "Denim Jacket",
-        price: 59.99,
-        rating: 4.5,
-        image: "https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop",
-        stock: 25,
-        category: "Clothing",
-    },
-    {
-        id: "sample-12",
-        name: "Leather Backpack",
-        price: 89.99,
-        rating: 4.8,
-        image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop",
-        stock: 18,
-        category: "Accessories",
-    },
-];
+// Get sample products from the shared utility
+const sampleProducts = getSampleProductsForShop();
 
 export default function ShopPage() {
-    // State for filters, pagination, and sorting
     const [filters, setFilters] = useState<ProductFilter>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-
-    // State for products and loading
     const [allProducts, setAllProducts] = useState<ProductType[]>([]);
     const [paginatedProducts, setPaginatedProducts] = useState<ProductType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [totalPages, setTotalPages] = useState(1);
-
-    // Define items per page - 9 items (3x3 grid)
     const ITEMS_PER_PAGE = 9;
 
     // Handle filter changes
@@ -186,11 +71,13 @@ export default function ShopPage() {
             setIsLoading(true);
 
             try {
-                // Always start with sample data to ensure we have something to show
+                // Start with sample data to ensure we have something to show
                 let productsToShow = [...sampleProducts];
 
                 // Try to fetch real products from API
                 try {
+                    // Use the exact same API endpoint without any parameters to ensure consistency
+                    // This matches the endpoint used in FeaturedProducts.tsx
                     const response = await fetch('/api/products');
 
                     if (response.ok) {
@@ -200,24 +87,57 @@ export default function ShopPage() {
                         // If we have real products, combine them with sample products
                         if (apiProducts.length > 0) {
                             // Convert API products to the format expected by ProductCard
-                            const convertedApiProducts = apiProducts.map((product: ProductType) => ({
-                                id: product.id,
-                                name: product.name,
-                                price: product.price,
-                                rating: 4.5, // Default rating as it might not be in the API
-                                image: product.mainImage || 'https://via.placeholder.com/400',
-                                stock: product.stock,
-                                category: product.category?.name || 'Other',
-                            }));
+                            const convertedApiProducts = apiProducts.map(convertToShopFormat);
 
-                            // Filter out sample products that have the same name as API products
-                            const sampleWithoutDuplicates = sampleProducts.filter(sample =>
-                                !convertedApiProducts.some((api: ProductType) =>
-                                    api.name.toLowerCase() === sample.name.toLowerCase()
-                                )
+                            // Prioritize the Apple product and other API products
+                            let appleProduct = convertedApiProducts.find((p: ProductType) =>
+                                p.name.toLowerCase() === 'apple'
                             );
 
-                            productsToShow = [...convertedApiProducts, ...sampleWithoutDuplicates];
+                            let otherApiProducts = convertedApiProducts.filter((p: ProductType) =>
+                                p.name.toLowerCase() !== 'apple'
+                            );
+
+                            // Make sure Apple product is first if it exists
+                            if (appleProduct) {
+                                productsToShow = [appleProduct, ...otherApiProducts];
+                            } else {
+                                productsToShow = [...otherApiProducts];
+                            }
+
+                            // Only add sample products if we don't have enough real ones
+                            if (productsToShow.length < 6) {
+                                // Add Wireless Bluetooth Earbuds and Smart Watch Series 5 first if they're in sample
+                                let earbudsProduct = sampleProducts.find((p: ProductType) =>
+                                    p.name.includes('Wireless Bluetooth Earbuds')
+                                );
+
+                                let watchProduct = sampleProducts.find((p: ProductType) =>
+                                    p.name.includes('Smart Watch Series 5')
+                                );
+
+                                let prioritySamples = [];
+                                if (earbudsProduct) prioritySamples.push(earbudsProduct);
+                                if (watchProduct) prioritySamples.push(watchProduct);
+
+                                // Then add other samples without duplicating names
+                                const sampleWithoutDuplicates = sampleProducts.filter(sample =>
+                                    !productsToShow.some(api => api.name === sample.name) &&
+                                    sample.name !== 'Wireless Bluetooth Earbuds' &&
+                                    sample.name !== 'Smart Watch Series 5'
+                                );
+
+                                const neededCount = 6 - productsToShow.length - prioritySamples.length;
+                                const additionalSamples = sampleWithoutDuplicates.slice(0, neededCount);
+
+                                productsToShow = [
+                                    ...productsToShow,
+                                    ...prioritySamples,
+                                    ...additionalSamples
+                                ];
+                            }
+
+                            console.log(`Shop showing products: ${productsToShow.map(p => p.name).join(', ')}`);
                         }
                     }
                 } catch (apiError) {
@@ -230,9 +150,19 @@ export default function ShopPage() {
 
                 // Filter by category if specified
                 if (filters.category && filters.category !== 'All') {
-                    filteredProducts = filteredProducts.filter(product =>
-                        product.category === filters.category
-                    );
+                    // First try to match by categoryId (which is more reliable)
+                    if (filters.categoryId) {
+                        const categoryIdLower = filters.categoryId.toLowerCase();
+                        filteredProducts = filteredProducts.filter(product =>
+                            product.categoryId?.toLowerCase() === categoryIdLower
+                        );
+                    } else {
+                        // Fallback to category name if categoryId is not available
+                        const categoryLower = filters.category.toLowerCase();
+                        filteredProducts = filteredProducts.filter(product =>
+                            product.category?.toLowerCase() === categoryLower
+                        );
+                    }
                 }
 
                 // Filter by price range if specified
@@ -346,7 +276,6 @@ export default function ShopPage() {
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center">
                             <button
-                                onClick={() => setShowMobileSidebar(true)}
                                 className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-700 dark:text-gray-300 flex items-center gap-2"
                             >
                                 <span>Filters</span>
@@ -358,8 +287,8 @@ export default function ShopPage() {
                         </div>
 
                         <SearchBar
-                            onSearch={handleSearch}
                             initialSearchTerm={filters.searchTerm || ''}
+                            onSearch={handleSearch}
                         />
 
                         <SortDropdown
@@ -408,8 +337,8 @@ export default function ShopPage() {
                         <div className="hidden lg:flex justify-between items-center mb-6">
                             <div className="w-[400px]">
                                 <SearchBar
-                                    onSearch={handleSearch}
                                     initialSearchTerm={filters.searchTerm || ''}
+                                    onSearch={handleSearch}
                                 />
                             </div>
 

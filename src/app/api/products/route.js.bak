@@ -1,0 +1,80 @@
+import { NextResponse } from 'next/server';
+import {
+    getAllProducts,
+    createProduct,
+    getProductById,
+    updateProduct,
+    deleteProduct,
+    searchProducts,
+    getProductsByCategory
+} from '@/models/Product';
+// اتصال قاعدة البيانات لم يعد ضروريًا بعد إزالة دمج الفئات
+// import { connectToDatabase } from '@/lib/mongodb';
+
+// الحصول على كل المنتجات أو البحث بينهم
+export async function GET(request) {
+    try {
+        // التحقق إذا كان هناك query param للبحث
+        const { searchParams } = new URL(request.url);
+        const query = searchParams.get('query');
+        const categoryId = searchParams.get('categoryId');
+        const limit = parseInt(searchParams.get('limit') || '20');
+
+        let products;
+
+        if (query) {
+            // البحث عن المنتجات باستخدام query
+            products = await searchProducts(query);
+        } else if (categoryId) {
+            // الحصول على المنتجات حسب التصنيف
+            products = await getProductsByCategory(categoryId);
+        } else {
+            // الحصول على كل المنتجات
+            products = await getAllProducts(limit);
+        }
+
+        // إضافة معرّف المنتج بصيغة سلسلة نصية فقط
+        const simplifiedProducts = products.map(product => ({
+            ...product,
+            id: product._id.toString(),
+            // إضافة كائن فئة فارغ لتجنب أخطاء في الواجهة
+            category: product.categoryId ? { name: "غير معروف" } : null
+        }));
+
+        return NextResponse.json({ products: simplifiedProducts });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return NextResponse.json(
+            { error: 'حدث خطأ أثناء الحصول على المنتجات', details: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+// إنشاء منتج جديد
+export async function POST(request) {
+    try {
+        const productData = await request.json();
+
+        // التحقق من البيانات الأساسية المطلوبة
+        if (!productData.name || !productData.price) {
+            return NextResponse.json(
+                { error: 'اسم المنتج والسعر مطلوبان' },
+                { status: 400 }
+            );
+        }
+
+        const newProduct = await createProduct(productData);
+
+        return NextResponse.json(
+            { message: 'تم إنشاء المنتج بنجاح', product: newProduct },
+            { status: 201 }
+        );
+    } catch (error) {
+        console.error('Error creating product:', error);
+        return NextResponse.json(
+            { error: 'حدث خطأ أثناء إنشاء المنتج' },
+            { status: 500 }
+        );
+    }
+} 

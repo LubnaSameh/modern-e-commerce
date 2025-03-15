@@ -56,28 +56,48 @@ export default function ProductInfo({
 
     // Decrease quantity
     const decreaseQuantity = () => {
-        setQuantity((prev) => (prev > 1 ? prev - 1 : prev));
+        if (quantity <= 1) return;
+        console.log('Decreasing quantity from', quantity);
+        setQuantity(prev => {
+            const newQuantity = prev - 1;
+            console.log('New quantity:', newQuantity);
+            setTimeout(() => toast.info(`Quantity updated to ${newQuantity}`), 0);
+            return newQuantity;
+        });
     };
 
     // Increase quantity
     const increaseQuantity = () => {
-        setQuantity((prev) => (prev < stock ? prev + 1 : prev));
+        if (quantity >= stock) return;
+        console.log('Increasing quantity from', quantity);
+        setQuantity(prev => {
+            const newQuantity = prev + 1;
+            console.log('New quantity:', newQuantity);
+            setTimeout(() => toast.info(`Quantity updated to ${newQuantity}`), 0);
+            return newQuantity;
+        });
     };
 
     // Handle add to cart
     const handleAddToCart = () => {
         if (!isClient) return; // Don't execute if not client-side
 
+        console.log(`Adding ${quantity} of ${name} to cart`);
+
+        // Clear any existing items with this ID first to avoid quantity issues
+        useCartStore.getState().removeItem(id);
+
+        // Then add the item with the correct quantity
         addItem({
             id,
             name,
             price,
-            quantity,
             image: typeof window !== 'undefined' ? window.location.origin + '/images/products/product-1.jpg' : '',
-            color: selectedColor
-        });
+            color: selectedColor,
+            stock: stock
+        }, quantity); // Pass quantity as a separate parameter to ensure it's used correctly
 
-        toast.success(`${name} added to cart!`);
+        toast.success(`${quantity} ${quantity > 1 ? 'units' : 'unit'} of ${name} added to cart!`);
     };
 
     // Toggle favorite
@@ -224,6 +244,7 @@ export default function ProductInfo({
                     <button
                         onClick={decreaseQuantity}
                         disabled={quantity <= 1}
+                        aria-label="Decrease quantity"
                         className={`p-3 text-gray-600 dark:text-gray-400 ${quantity <= 1
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -250,6 +271,7 @@ export default function ProductInfo({
                     <button
                         onClick={increaseQuantity}
                         disabled={quantity >= stock}
+                        aria-label="Increase quantity"
                         className={`p-3 text-gray-600 dark:text-gray-400 ${quantity >= stock
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-gray-100 dark:hover:bg-gray-800"

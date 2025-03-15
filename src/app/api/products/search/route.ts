@@ -1,125 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { searchFixedProducts } from '@/lib/fixedData';
-
-// Define proper types to avoid 'any' type issues
-// إزالة واجهة ProductImage غير المستخدمة
-// interface ProductImage {
-//     id: string;
-//     url: string;
-// }
-
-// إزالة واجهة Product غير المستخدمة
-// interface Product {
-
-interface FormattedProduct {
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    image: string;
-    category: string;
-}
+import { connectToDatabase } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const query = searchParams.get('q');
+        // Get search term from request using both 'q' and 'term' for compatibility
+        const searchParams = new URL(request.url).searchParams;
+        const searchTerm = searchParams.get("q") || searchParams.get("term") || "";
 
-        if (!query) {
+        // For logging
+        console.log(`Searching for: "${searchTerm}"`);
+
+        // Initialize database results array
+        let dbResults: any[] = [];
+
+        // Return empty results if search term is empty
+        if (!searchTerm || searchTerm.trim() === '') {
             return NextResponse.json([]);
         }
 
-        // For debugging - log the query
-        console.log(`Searching for: "${query}"`);
-
-        // Get fixed products that match the query
-        const fixedResults = searchFixedProducts(query);
-        console.log(`Found ${fixedResults.length} fixed results`);
-
-        // Database search results
-        let dbResults: FormattedProduct[] = [];
-
+        // Try to get results from database
         try {
-            // First verify DB connection is working
-            await db.$queryRaw`SELECT 1`;
-            
-            // Search for products that match the query in name or description
-            try {
-                // SQLite doesn't support case-insensitive searches with mode: 'insensitive'
-                // We use standard contains which is case-sensitive in SQLite
-                const products = await db.product.findMany({
-                    where: {
-                        OR: [
-                            { 
-                                name: { 
-                                    contains: query 
-                                }
-                            },
-                            { 
-                                description: { 
-                                    contains: query 
-                                }
-                            },
-                            {
-                                category: {
-                                    name: {
-                                        contains: query
-                                    }
-                                }
-                            }
-                        ]
-                    },
-                    select: {
-                        id: true,
-                        name: true,
-                        price: true,
-                        description: true,
-                        mainImage: true,
-                        category: {
-                            select: {
-                                name: true
-                            }
-                        }
-                    },
-                    take: 10 // Limit results to 10 items
-                });
+            // Connect to MongoDB database
+            const { db } = await connectToDatabase();
+            const productsCollection = db.collection('products');
+            const categoriesCollection = db.collection('categories');
 
-                console.log(`Found ${products.length} database results`);
+            // Find products matching the search term
+            const products = await productsCollection.find({
+                $or: [
+                    { name: { $regex: searchTerm, $options: 'i' } },
+                    { description: { $regex: searchTerm, $options: 'i' } }
+                ]
+            })
+                .limit(10)
+                .toArray();
 
-                // Format the database results
-                dbResults = products.map((product: {
-                    id: string;
-                    name: string;
-                    price: number;
-                    description: string;
-                    mainImage: string | null;
-                    category: { name: string } | null;
-                }) => {
-                    return {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        description: product.description,
-                        image: product.mainImage || '',
-                        category: product.category?.name || ''
-                    };
-                });
-            } catch (prismaError) {
-                console.error('Prisma query error:', prismaError);
-                // Continue with only fixed results
-            }
+            // Get category information for these products
+            const productIds = products.map(product => product.categoryId).filter(Boolean);
+            const categories = productIds.length > 0
+                ? await categoriesCollection.find({ _id: { $in: productIds } }).toArray()
+                : [];
+
+            // Map categories to products
+            const categoriesMap = categories.reduce((map, category) => {
+                map[category._id.toString()] = category;
+                return map;
+            }, {});
+
+            // Format the database results
+            dbResults = products.map(product => {
+                const category = product.categoryId ? categoriesMap[product.categoryId] : null;
+                return {
+                    id: product._id.toString(),
+                    name: product.name,
+                    price: product.price,
+                    description: product.description,
+                    image: product.mainImage || '',
+                    category: category?.name || ''
+                };
+            });
+
+            console.log(`Found ${dbResults.length} products in database for "${searchTerm}"`);
         } catch (dbError) {
-            console.error('Database connection error:', dbError);
-            // Continue with only fixed results
+            console.error('Database error:', dbError);
+            return NextResponse.json([]);
         }
 
-        // Combine both result sets and return
-        const combinedResults = [...fixedResults, ...dbResults];
-        
-        // Limit to 20 combined results
-        const limitedResults = combinedResults.slice(0, 20);
-        
+        // Limit to 10 results
+        const limitedResults = dbResults.slice(0, 10);
+
         return NextResponse.json(limitedResults);
     } catch (error) {
         console.error('Search error:', error);

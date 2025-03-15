@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+// إزالة استيراد الاتصال بقاعدة البيانات لأننا لن نستخدمه
+// import { connectToDatabase } from '@/lib/mongodb';
 
 export async function GET() {
     try {
-        const categories = await db.category.findMany({
-            include: {
-                _count: {
-                    select: { products: true }
-                }
-            },
-            orderBy: {
-                name: 'asc'
-            }
-        });
-
-        return NextResponse.json(categories, { status: 200 });
+        // إرجاع مصفوفة فارغة مباشرة بدلاً من جلب البيانات من قاعدة البيانات
+        return NextResponse.json([], { status: 200 });
     } catch (error) {
         console.error('Error fetching categories:', error);
         return NextResponse.json(
-            { error: 'Error fetching categories' },
+            { error: 'Error fetching categories', details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }

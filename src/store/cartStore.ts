@@ -26,6 +26,9 @@ interface CartStore {
 // Safe check for browser environment
 const isBrowser = typeof window !== 'undefined';
 
+// Helper function to ensure non-negative numbers
+const ensureNonNegative = (value: number): number => Math.max(0, value);
+
 // Create a cart store that only works on the client-side
 export const useCartStore = create<CartStore>()(
     persist(
@@ -38,25 +41,28 @@ export const useCartStore = create<CartStore>()(
                 // Safety check for SSR
                 if (!isBrowser) return;
 
+                // Ensure quantity is positive
+                const safeQuantity = Math.max(1, quantity);
+
                 const { items } = get();
                 const existingItem = items.find(item => item.id === product.id);
 
                 if (existingItem) {
                     // If item exists, update quantity
-                    return get().updateQuantity(product.id, existingItem.quantity + quantity);
+                    return get().updateQuantity(product.id, existingItem.quantity + safeQuantity);
                 } else {
                     // Otherwise add new item
                     const newItem: CartItem = {
                         ...product,
-                        quantity
+                        quantity: safeQuantity
                     };
 
                     set((state) => {
                         const updatedItems = [...state.items, newItem];
                         return {
                             items: updatedItems,
-                            totalItems: state.totalItems + quantity,
-                            subtotal: state.subtotal + (product.price * quantity)
+                            totalItems: ensureNonNegative(state.totalItems + safeQuantity),
+                            subtotal: ensureNonNegative(state.subtotal + (product.price * safeQuantity))
                         };
                     });
                 }
@@ -72,8 +78,8 @@ export const useCartStore = create<CartStore>()(
                 if (itemToRemove) {
                     set((state) => ({
                         items: state.items.filter(item => item.id !== id),
-                        totalItems: state.totalItems - itemToRemove.quantity,
-                        subtotal: state.subtotal - (itemToRemove.price * itemToRemove.quantity)
+                        totalItems: ensureNonNegative(state.totalItems - itemToRemove.quantity),
+                        subtotal: ensureNonNegative(state.subtotal - (itemToRemove.price * itemToRemove.quantity))
                     }));
                 }
             },
@@ -87,7 +93,7 @@ export const useCartStore = create<CartStore>()(
 
                 if (itemToUpdate) {
                     // Ensure quantity is within valid range (1 to stock)
-                    const validQuantity = Math.max(1, Math.min(quantity, itemToUpdate.stock));
+                    const validQuantity = Math.max(1, Math.min(quantity, itemToUpdate.stock || 99));
                     const quantityDiff = validQuantity - itemToUpdate.quantity;
 
                     set((state) => ({
@@ -96,8 +102,8 @@ export const useCartStore = create<CartStore>()(
                                 ? { ...item, quantity: validQuantity }
                                 : item
                         ),
-                        totalItems: state.totalItems + quantityDiff,
-                        subtotal: state.subtotal + (itemToUpdate.price * quantityDiff)
+                        totalItems: ensureNonNegative(state.totalItems + quantityDiff),
+                        subtotal: ensureNonNegative(state.subtotal + (itemToUpdate.price * quantityDiff))
                     }));
                 }
             },
@@ -133,7 +139,18 @@ if (isBrowser) {
             if (persistedState) {
                 const parsed = JSON.parse(persistedState);
                 if (parsed?.state) {
-                    useCartStore.setState(parsed.state);
+                    // Ensure we have valid numbers before setting state
+                    const safeState = {
+                        ...parsed.state,
+                        totalItems: ensureNonNegative(parsed.state.totalItems || 0),
+                        subtotal: ensureNonNegative(parsed.state.subtotal || 0),
+                        items: Array.isArray(parsed.state.items) ? parsed.state.items.map((item: CartItem) => ({
+                            ...item,
+                            quantity: Math.max(1, item.quantity || 1),
+                            price: Math.max(0, item.price || 0)
+                        })) : []
+                    };
+                    useCartStore.setState(safeState);
                 }
             }
         } catch (err) {

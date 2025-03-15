@@ -25,7 +25,7 @@ interface RelatedProductsProps {
 
 export default function RelatedProducts({ title, products }: RelatedProductsProps) {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    
+
     useEffect(() => {
         console.log('RelatedProducts component received:', { title, productsCount: products.length });
         console.log('Products data:', products);
@@ -84,14 +84,14 @@ export default function RelatedProducts({ title, products }: RelatedProductsProp
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
                 {products.map((product) => {
-                    const imageUrl = product.image || 
-                        (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null) || 
+                    const imageUrl = product.image ||
+                        (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null) ||
                         'https://via.placeholder.com/400?text=No+Image';
-                    
+
                     return (
                         <div key={product.id} className="min-w-[280px]">
-                            <ProductCard 
-                                {...product} 
+                            <ProductCard
+                                {...product}
                                 image={imageUrl}
                             />
                         </div>

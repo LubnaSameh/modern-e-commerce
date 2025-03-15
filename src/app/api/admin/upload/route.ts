@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 // إزالة الـ imports غير المستخدمة
 // import { getServerSession } from "next-auth";
 // import { authOptions } from "@/lib/auth";
-import { put } from '@vercel/blob';
-import { v4 as uuidv4 } from "uuid";
+import { uploadImage } from "@/lib/cloudinary";
+// إزالة uuid غير المستخدم
+// import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: Request) {
     try {
@@ -45,25 +46,26 @@ export async function POST(request: Request) {
             );
         }
 
-        // Create unique filename
-        const fileExtension = file.name.split(".").pop();
-        const fileName = `${uuidv4()}.${fileExtension}`;
-
         try {
-            // Upload to Vercel Blob Storage
-            const blob = await put(fileName, file, {
-                access: 'public',
-            });
+            // Convert file to buffer
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
 
-            console.log('Successfully uploaded to Blob Storage:', blob.url);
+            // Upload to Cloudinary
+            const result = await uploadImage(buffer);
+
+            console.log('Successfully uploaded to Cloudinary:', result.url);
 
             // Return the URL to the uploaded file
-            return NextResponse.json({ url: blob.url });
+            return NextResponse.json({
+                url: result.url,
+                public_id: result.public_id
+            });
 
-        } catch (blobError) {
-            console.error("Error uploading to Blob Storage:", blobError);
+        } catch (uploadError) {
+            console.error("Error uploading to Cloudinary:", uploadError);
             return NextResponse.json(
-                { error: "Error uploading to Blob Storage", details: blobError instanceof Error ? blobError.message : 'Unknown error' },
+                { error: "Error uploading to cloud storage", details: uploadError instanceof Error ? uploadError.message : 'Unknown error' },
                 { status: 500 }
             );
         }
