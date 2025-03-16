@@ -27,7 +27,8 @@ export async function sendKeepAlivePing() {
             '/api/products',
             '/api/test-db',
             '/api/admin/stats?simple=true',
-            '/api/products?limit=1'
+            '/api/products?limit=1',
+            '/api/diagnostic'
         ];
 
         // اختيار نقطة وصول عشوائية للاستدعاء
@@ -40,7 +41,7 @@ export async function sendKeepAlivePing() {
 
         // إرسال طلب بأولوية منخفضة لتجنب التأثير على الأداء
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // زيادة مهلة الانتظار إلى 30 ثانية بدلاً من 8 ثوانٍ
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // تقليل المهلة إلى 20 ثانية
 
         await fetch(url, {
             method: 'HEAD',
@@ -57,7 +58,26 @@ export async function sendKeepAlivePing() {
     } catch (error) {
         // تجاهل أخطاء الاتصال - فقط سجل في وحدة التحكم للتصحيح
         console.log('Keep-alive error (can be ignored):', error);
-        return false;
+
+        // محاولة إرسال ping بطريقة أخرى في حالة الفشل
+        try {
+            // استخدام طريقة GET بدلاً من HEAD
+            const timestamp = Date.now();
+            const backupUrl = `${SITE_URL}/api/diagnostic?minimal=true&t=${timestamp}`;
+
+            await fetch(backupUrl, {
+                method: 'GET',
+                cache: 'no-store',
+                mode: 'cors',
+                credentials: 'same-origin'
+            });
+
+            console.log('Backup keep-alive ping sent successfully');
+            return true;
+        } catch (backupError) {
+            console.log('Both keep-alive attempts failed:', backupError);
+            return false;
+        }
     }
 }
 
@@ -71,7 +91,7 @@ export async function sendMultiplePings() {
         return;
     }
 
-    // إرسال 2-3 محاولات بفاصل زمني قصير
+    // إرسال 3-4 محاولات بفاصل زمني قصير
     await sendKeepAlivePing();
 
     // إرسال محاولة ثانية بعد 1 ثانية
@@ -83,6 +103,11 @@ export async function sendMultiplePings() {
     setTimeout(async () => {
         await sendKeepAlivePing();
     }, 3000);
+
+    // إرسال محاولة رابعة بعد 10 ثوانٍ
+    setTimeout(async () => {
+        await sendKeepAlivePing();
+    }, 10000);
 }
 
 /**
@@ -100,20 +125,29 @@ export function useKeepAlive() {
         // إرسال عدة محاولات ping فورية عند تحميل الصفحة
         setTimeout(() => sendMultiplePings(), 1000);
 
-        // محاولة تقليل فترة الخمول - إرسال ping كل 5 دقائق بدلاً من دقيقة واحدة
+        // محاولة تقليل فترة الخمول - إرسال ping كل 2 دقيقة بدلاً من 5 دقائق
         const interval = setInterval(() => {
             sendKeepAlivePing();
-        }, 5 * 60 * 1000); // 5 دقائق
+        }, 2 * 60 * 1000); // 2 دقيقة
 
-        // إضافة محاولات متعددة كل 15 دقيقة للتأكيد بدلاً من 5 دقائق
+        // إضافة محاولات متعددة كل 10 دقائق للتأكيد بدلاً من 15 دقيقة
         const bulkInterval = setInterval(() => {
             sendMultiplePings();
-        }, 15 * 60 * 1000); // 15 دقيقة
+        }, 10 * 60 * 1000); // 10 دقائق
+
+        // تنفيذ محاولة إضافية عند تغيير حالة التطبيق مثل فقدان التركيز واستعادته
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // إرسال ping عند العودة للصفحة
+                sendKeepAlivePing();
+            }
+        });
 
         // التنظيف عند تفكيك المكون
         return () => {
             clearInterval(interval);
             clearInterval(bulkInterval);
+            // لا حاجة لإزالة مستمع الحدث لأن المكون سيكون قد تم تفكيكه بالفعل
         };
     }
 
