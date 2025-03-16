@@ -1,1 +1,0 @@
-// Ensure that all products have lowercase categoryId values 

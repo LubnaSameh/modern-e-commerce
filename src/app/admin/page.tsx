@@ -19,11 +19,10 @@ export default function AdminDashboard() {
                     <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
                     <div className="flex-1">
                         <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                            ملاحظة مهمة
+                        Important Note
                         </h3>
                         <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-                            صفحة المنتجات فقط هي المتاحة حالياً في لوحة التحكم. باقي الصفحات قيد التطوير.
-                        </p>
+                        Only the products page is currently available in the control panel. The rest of the pages are under development                        </p>
                     </div>
                     <button
                         onClick={() => setShowAlert(false)}

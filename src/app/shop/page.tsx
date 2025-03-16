@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "@/components/shop/ProductCard";
 import FilterSidebar from "@/components/shop/FilterSidebar";
+import MobileFilters from "@/components/shop/MobileFilters";
 import SearchBar from "@/components/shop/SearchBar";
 import SortDropdown from "@/components/shop/SortDropdown";
 import Pagination from "@/components/shop/Pagination";
@@ -275,12 +276,10 @@ export default function ShopPage() {
                 <div className="lg:hidden mb-6">
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center">
-                            <button
-                                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                            >
-                                <span>Filters</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-                            </button>
+                            <MobileFilters
+                                filters={filters}
+                                onFilterChange={handleFilterChange}
+                            />
                             <span className="text-sm text-gray-500 dark:text-gray-400">
                                 {allProducts.length} Products
                             </span>
@@ -297,30 +296,6 @@ export default function ShopPage() {
                         />
                     </div>
                 </div>
-
-                {/* Mobile sidebar overlay */}
-                {showMobileSidebar && (
-                    <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setShowMobileSidebar(false)}>
-                        <div
-                            className="absolute right-0 top-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-xl p-4 overflow-y-auto transform transition-transform"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-semibold">Filters</h2>
-                                <button onClick={() => setShowMobileSidebar(false)}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                </button>
-                            </div>
-                            <FilterSidebar
-                                initialFilters={filters}
-                                onFilterChange={(newFilters) => {
-                                    handleFilterChange(newFilters);
-                                    setShowMobileSidebar(false);
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 {/* Desktop layout */}
                 <div className="flex flex-col lg:flex-row gap-8">

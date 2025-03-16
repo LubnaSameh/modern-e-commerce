@@ -72,10 +72,10 @@ export default function DiagnosticPage() {
                     {/* حالة الاتصال */}
                     <div className="rounded-lg shadow overflow-hidden">
                         <div className={`p-4 ${diagnosticData.connection_status === 'success'
-                                ? 'bg-green-100'
-                                : diagnosticData.connection_status === 'failed'
-                                    ? 'bg-red-100'
-                                    : 'bg-yellow-100'
+                            ? 'bg-green-100'
+                            : diagnosticData.connection_status === 'failed'
+                                ? 'bg-red-100'
+                                : 'bg-yellow-100'
                             }`}>
                             <h2 className="text-xl font-semibold">
                                 حالة الاتصال: {' '}

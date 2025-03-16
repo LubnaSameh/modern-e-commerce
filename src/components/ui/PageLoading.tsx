@@ -5,10 +5,22 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function PageLoading() {
+    // منع التصيير على الخادم تمامًا
+    const [isClient, setIsClient] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    // Simulate loading progress
+    // استخدم العبارة التي تريدها هنا - لن تظهر على الخادم على الإطلاق
+    const loadingText = "Welcome to our exclusive collection";
+
+    // التأكد من أننا نعمل على جانب العميل فقط
     useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    // Simulate loading progress - فقط على جانب العميل
+    useEffect(() => {
+        if (!isClient) return;
+
         const timer = setInterval(() => {
             setProgress(prevProgress => {
                 // Speed up as we get closer to 100%
@@ -22,7 +34,12 @@ export default function PageLoading() {
         }, 150);
 
         return () => clearInterval(timer);
-    }, []);
+    }, [isClient]);
+
+    // إذا لم نكن على جانب العميل، ارجع div فارغ
+    if (!isClient) {
+        return <div className="fixed inset-0 bg-white dark:bg-gray-950 z-50"></div>;
+    }
 
     return (
         <div className="fixed inset-0 bg-white dark:bg-gray-950 z-50 flex flex-col items-center justify-center">
@@ -58,7 +75,7 @@ export default function PageLoading() {
                     transition={{ delay: 0.3 }}
                     className="mt-4 text-gray-600 dark:text-gray-400"
                 >
-                    Loading your experience...
+                    {loadingText}
                 </motion.p>
 
                 {/* Progress bar */}

@@ -255,7 +255,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         </div>
                     ) : (
                         <div className="p-4 text-center">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Start typing to search for products</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Search now works with real products from your dashboard, not sample data</p>
                         </div>
                     )}
                 </div>
