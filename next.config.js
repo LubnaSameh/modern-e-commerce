@@ -9,18 +9,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: [
-      'i.pravatar.cc',
-      'images.unsplash.com',
-      'ui-avatars.com',
-      'randomuser.me',
-      'placehold.co',
-      'localhost',
-      'via.placeholder.com',
-      'verjpvrtbvljhzbwbdch.blob.vercel-storage.com',
-      'res.cloudinary.com',
-      'example.com'
-    ],
     remotePatterns: [
       {
         protocol: 'http',
@@ -52,7 +40,32 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.lubna-sameh-mohameds-projects.vercel.app',
         pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+        pathname: '/**',
+      },
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -143,10 +156,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  // Disable strict mode for external packages compatibility
-  experimental: {
-    esmExternals: 'loose'
   }
 };
 
